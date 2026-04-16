@@ -1797,9 +1797,13 @@ async function saveDocument() {
       const blob = dataUrlToBlob(currentImageDataUrl);
       const fileName = `${currentWorkspaceId}/${Date.now()}.jpg`;
       const { data: uploadData, error: uploadErr } = await sb.storage.from('documents').upload(fileName, blob, { contentType: 'image/jpeg' });
-      if (!uploadErr) {
+      if (uploadErr) {
+        console.error('Upload Fehler:', uploadErr);
+        showToast('Foto-Upload fehlgeschlagen: ' + uploadErr.message);
+      } else {
         // Use signed URL (valid 10 years) since bucket is private
-        const { data: signedData } = await sb.storage.from('documents').createSignedUrl(fileName, 60 * 60 * 24 * 365 * 10);
+        const { data: signedData, error: signErr } = await sb.storage.from('documents').createSignedUrl(fileName, 60 * 60 * 24 * 365 * 10);
+        if (signErr) { console.error('SignedURL Fehler:', signErr); }
         imageUrl = signedData?.signedUrl || null;
       }
     }
