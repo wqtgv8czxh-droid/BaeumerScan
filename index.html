@@ -91,9 +91,8 @@
     background: var(--surface);
     border-top: 1px solid var(--border);
     flex-shrink: 0;
-    height: 80px;
     align-items: flex-start;
-    padding-top: 8px;
+    padding: 6px 0 calc(var(--safe-bottom) + 8px);
   }
 
   .tab-btn {
@@ -101,18 +100,17 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    padding: 0;
+    gap: 3px;
+    padding: 4px 0 0;
     background: none;
     border: none;
     cursor: pointer;
     color: var(--muted);
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
+    font-size: 10px;
     transition: color 0.15s;
     min-width: 0;
-    height: 54px;
-    justify-content: center;
+    justify-content: flex-start;
   }
   .tab-btn.active { color: var(--accent); }
   .tab-btn svg { width: 24px; height: 24px; flex-shrink: 0; }
@@ -685,20 +683,7 @@
   .detail-row:last-child { border-bottom: none; }
   .detail-row-label { color: var(--muted); }
 
-  .ocr-text-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px;
-    font-size: 11px;
-    line-height: 1.7;
-    color: var(--muted);
-    max-height: 120px;
-    overflow-y: auto;
-    margin-top: 8px;
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
+  
 
   .export-btn {
     width: calc(100% - 40px);
@@ -988,6 +973,100 @@
   }
   .crop-btn.primary { background: var(--accent); color: white; }
   .crop-btn.secondary { background: var(--surface); border: 1.5px solid var(--border); color: var(--text); }
+
+  /* ===== EDIT FORM IN DETAIL ===== */
+  .edit-form-wrap {
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .edit-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .edit-actions .crop-btn { font-size: 14px; padding: 14px; }
+
+  /* ===== SETTINGS MANAGEMENT ===== */
+  .manage-list {
+    padding: 0 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .manage-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--bg);
+    border-radius: 10px;
+    font-size: 13px;
+  }
+  .manage-item.disabled {
+    opacity: 0.45;
+    text-decoration: line-through;
+  }
+  .manage-toggle {
+    width: 38px;
+    height: 22px;
+    border-radius: 11px;
+    background: var(--border);
+    position: relative;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .manage-toggle.on { background: var(--green); }
+  .manage-toggle::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: white;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+  .manage-toggle.on::after { transform: translateX(16px); }
+
+  .manage-add-row {
+    display: flex;
+    gap: 8px;
+    padding: 0 16px 14px;
+  }
+  .manage-add-row .form-input { flex: 1; padding: 10px 12px; font-size: 13px; }
+  .manage-add-btn {
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    border-radius: 10px;
+    padding: 0 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* Dynamic type pill colors for custom types */
+  .type-pill.active:not([data-type="Rechnung"]):not([data-type="Vertrag"]):not([data-type="Allgemein"]) {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(224,122,95,0.08);
+  }
+  /* Dynamic stripe for custom types */
+  .doc-stripe:not(.stripe-Rechnung):not(.stripe-Vertrag):not(.stripe-Allgemein) {
+    background: var(--yellow);
+  }
+  /* Dynamic badge for custom types */
+  .detail-type-badge:not(.badge-Rechnung):not(.badge-Vertrag):not(.badge-Allgemein) {
+    background: rgba(242,204,143,0.2);
+    color: #B8860B;
+  }
 </style>
 </head>
 <body>
@@ -1070,12 +1149,7 @@
       <h1>Archiv</h1>
       <span id="doc-count" style="font-size:12px;color:var(--muted)"></span>
     </div>
-    <div class="filter-bar" id="filter-bar">
-      <button class="filter-chip active" onclick="setFilter('all',this)">Alle</button>
-      <button class="filter-chip" onclick="setFilter('Rechnung',this)">📄 Rechnungen</button>
-      <button class="filter-chip" onclick="setFilter('Vertrag',this)">📋 Verträge</button>
-      <button class="filter-chip" onclick="setFilter('Allgemein',this)">📁 Allgemein</button>
-    </div>
+    <div class="filter-bar" id="filter-bar"></div>
     <div class="search-wrap">
       <div class="search-wrap-inner">
         <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1091,7 +1165,7 @@
 
   <!-- SETTINGS VIEW -->
   <div class="view" id="view-settings">
-    <div class="navbar"><h1>Einst.</h1></div>
+    <div class="navbar"><h1>Einstellungen</h1></div>
     <div class="settings-content">
 
       <div class="settings-section">
@@ -1109,6 +1183,24 @@
         <div class="settings-row" onclick="generateInviteLink()">
           <span>🔗 Einladungslink erstellen</span>
           <span style="color:var(--muted)">›</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-label">Dokumentenarten</div>
+        <div class="manage-list" id="doctype-list"></div>
+        <div class="manage-add-row">
+          <input class="form-input" id="doctype-add-input" type="text" placeholder="Neue Art hinzufügen..." onkeydown="if(event.key==='Enter'){addDocType();event.preventDefault()}">
+          <button class="manage-add-btn" onclick="addDocType()">+</button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-label">Tag-Vorschläge</div>
+        <div class="manage-list" id="tag-manage-list"></div>
+        <div class="manage-add-row">
+          <input class="form-input" id="tag-add-input" type="text" placeholder="Neuen Tag hinzufügen..." onkeydown="if(event.key==='Enter'){addManagedTag();event.preventDefault()}">
+          <button class="manage-add-btn" onclick="addManagedTag()">+</button>
         </div>
       </div>
 
@@ -1177,33 +1269,56 @@
   <div class="sheet-backdrop"></div>
   <div class="sheet-content">
     <div class="sheet-handle"></div>
-    <div class="sheet-header">
-      <div class="sheet-title">Zuschneiden</div>
-      <button class="sheet-close" onclick="skipCrop()">Überspringen</button>
-    </div>
-    <div style="padding:12px 20px 0;font-size:12px;color:var(--muted)">
-      Ziehe die Ecken um den Bereich anzupassen
-    </div>
-    <div style="margin:12px 20px 0;border-radius:12px;overflow:hidden">
-      <div class="crop-wrap" id="crop-wrap">
-        <img id="crop-img" src="">
-        <div class="crop-box" id="crop-box">
-          <div class="crop-corner tl"></div>
-          <div class="crop-corner tr"></div>
-          <div class="crop-corner bl"></div>
-          <div class="crop-corner br"></div>
-          <div class="crop-handle tl" data-handle="tl"></div>
-          <div class="crop-handle tr" data-handle="tr"></div>
-          <div class="crop-handle bl" data-handle="bl"></div>
-          <div class="crop-handle br" data-handle="br"></div>
+
+    <!-- Step 1: Edit crop area -->
+    <div id="crop-step-edit">
+      <div class="sheet-header">
+        <div class="sheet-title">Zuschneiden</div>
+        <button class="sheet-close" onclick="skipCrop()">Überspringen</button>
+      </div>
+      <div style="padding:12px 20px 0;font-size:12px;color:var(--muted)">
+        Ziehe die Ecken um den Bereich anzupassen
+      </div>
+      <div style="margin:12px 20px 0;border-radius:12px;overflow:hidden">
+        <div class="crop-wrap" id="crop-wrap">
+          <img id="crop-img" src="">
+          <div class="crop-box" id="crop-box">
+            <div class="crop-corner tl"></div>
+            <div class="crop-corner tr"></div>
+            <div class="crop-corner bl"></div>
+            <div class="crop-corner br"></div>
+            <div class="crop-handle tl" data-handle="tl"></div>
+            <div class="crop-handle tr" data-handle="tr"></div>
+            <div class="crop-handle bl" data-handle="bl"></div>
+            <div class="crop-handle br" data-handle="br"></div>
+          </div>
         </div>
       </div>
+      <div class="crop-actions">
+        <button class="crop-btn secondary" onclick="skipCrop()">Original</button>
+        <button class="crop-btn primary" onclick="applyCrop()">Vorschau →</button>
+      </div>
+      <div style="height:20px"></div>
     </div>
-    <div class="crop-actions">
-      <button class="crop-btn secondary" onclick="skipCrop()">Original</button>
-      <button class="crop-btn primary" onclick="applyCrop()">✓ Zuschneiden</button>
+
+    <!-- Step 2: Preview cropped result -->
+    <div id="crop-step-preview" style="display:none">
+      <div class="sheet-header">
+        <div class="sheet-title">Vorschau</div>
+      </div>
+      <div style="padding:12px 20px 0;font-size:12px;color:var(--muted)">
+        So wird dein Dokument gespeichert
+      </div>
+      <div style="margin:12px 20px 0;border-radius:12px;overflow:hidden;background:var(--border);display:flex;align-items:center;justify-content:center;max-height:400px">
+        <img id="crop-preview-img" src="" style="width:100%;object-fit:contain;max-height:400px">
+      </div>
+      <div class="crop-actions">
+        <button class="crop-btn secondary" onclick="cropBackToEdit()">← Anpassen</button>
+        <button class="crop-btn primary" onclick="cropConfirm()">✓ Übernehmen</button>
+      </div>
+      <div style="height:20px"></div>
     </div>
-    <div style="height:20px"></div>
+
   </div>
 </div>
 
@@ -1233,11 +1348,7 @@
       </div>
       <div class="form-group">
         <label class="form-label">Dokumenttyp</label>
-        <div class="type-pills">
-          <button class="type-pill active" data-type="Rechnung" onclick="selectType('Rechnung')">Rechnung</button>
-          <button class="type-pill" data-type="Vertrag" onclick="selectType('Vertrag')">Vertrag</button>
-          <button class="type-pill" data-type="Allgemein" onclick="selectType('Allgemein')">Allgemein</button>
-        </div>
+        <div class="type-pills" id="scan-type-pills"></div>
       </div>
       <div class="form-group">
         <label class="form-label">Betrag (optional)</label>
@@ -1474,6 +1585,10 @@ async function showApp() {
   await loadDocuments();
   subscribeRealtime();
   renderTagChips();
+  renderScanTypePills();
+  renderDocTypeManager();
+  renderTagManager();
+  renderFilterBar();
   // Remove invite param from URL
   if (window.location.search) history.replaceState({}, '', window.location.pathname);
 }
@@ -1495,6 +1610,7 @@ async function loadDocuments() {
   if (error) { console.error('loadDocuments error:', error); return; }
   documents = data || [];
   renderDocuments();
+  renderFilterBar();
   document.getElementById('doc-count').textContent = documents.length + ' Dok.';
 }
 
@@ -1558,8 +1674,20 @@ function renderDocuments() {
 function setFilter(f, el) {
   activeFilter = f;
   document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
+  if (el) el.classList.add('active');
   renderDocuments();
+}
+
+function renderFilterBar() {
+  const bar = document.getElementById('filter-bar');
+  if (!bar) return;
+  // Show all types that either are active OR have existing documents
+  const activeTypes = getActiveDocTypes();
+  const docTypes = [...new Set(documents.map(d => d.type).filter(Boolean))];
+  const allTypes = [...new Set([...activeTypes, ...docTypes])];
+  const icons = { 'Rechnung': '📄', 'Vertrag': '📋', 'Allgemein': '📁' };
+  bar.innerHTML = `<button class="filter-chip ${activeFilter==='all'?'active':''}" onclick="setFilter('all',this)">Alle</button>` +
+    allTypes.map(t => `<button class="filter-chip ${activeFilter===t?'active':''}" onclick="setFilter('${esc(t)}',this)">${icons[t]||'📋'} ${esc(t)}</button>`).join('');
 }
 
 // ===== DETAIL =====
@@ -1589,10 +1717,7 @@ function showDetail(id) {
         <span class="detail-row-label">Hinzugefügt von</span>
         <span>${esc(doc.added_by_name||'')}</span>
       </div>
-      ${doc.ocr_text ? `<div class="detail-row" style="flex-direction:column;gap:8px">
-        <span class="detail-row-label">Erkannter Text</span>
-        <div class="ocr-text-box">${esc(doc.ocr_text)}</div>
-      </div>` : ''}
+
     </div>
     ${doc.image_url ? `<button class="export-btn" onclick="exportImage('${doc.image_url}','${esc(doc.title)}')">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1651,13 +1776,13 @@ async function handleFile(file) {
 
   // Reset form
   selectedTags = [];
-  selectedType = 'Rechnung';
+  const activeTypes = getActiveDocTypes();
+  selectedType = activeTypes[0] || 'Rechnung';
   currentOcrText = '';
   document.getElementById('form-title').value = '';
   document.getElementById('form-amount').value = '';
   document.getElementById('form-date').value = '';
-  document.querySelectorAll('.type-pill').forEach(p => p.classList.remove('active'));
-  document.querySelector('.type-pill[data-type="Rechnung"]').classList.add('active');
+  renderScanTypePills();
   renderTagChips();
 
   // Read file then show crop editor first
@@ -1719,11 +1844,12 @@ async function runOCR(file) {
       document.getElementById('form-amount').value = amountMatch[1].replace(',','.');
     }
 
-    // Auto-detect type
+    // Auto-detect type (only if type is active)
     const lower = currentOcrText.toLowerCase();
-    if (lower.includes('rechnung') || lower.includes('invoice') || lower.includes('zahlung')) {
+    const activeTypesOcr = getActiveDocTypes();
+    if ((lower.includes('rechnung') || lower.includes('invoice') || lower.includes('zahlung')) && activeTypesOcr.includes('Rechnung')) {
       selectType('Rechnung');
-    } else if (lower.includes('vertrag') || lower.includes('vereinbarung') || lower.includes('contract')) {
+    } else if ((lower.includes('vertrag') || lower.includes('vereinbarung') || lower.includes('contract')) && activeTypesOcr.includes('Vertrag')) {
       selectType('Vertrag');
     }
 
@@ -1738,14 +1864,24 @@ async function runOCR(file) {
 // ===== FORM =====
 function selectType(type) {
   selectedType = type;
-  document.querySelectorAll('.type-pill').forEach(p => {
-    p.classList.toggle('active', p.dataset.type === type);
-  });
+  renderScanTypePills();
+}
+
+function renderScanTypePills() {
+  const wrap = document.getElementById('scan-type-pills');
+  if (!wrap) return;
+  const activeTypes = getActiveDocTypes();
+  wrap.innerHTML = activeTypes.map(t => {
+    const active = selectedType === t ? 'active' : '';
+    return `<button class="type-pill ${active}" data-type="${esc(t)}" onclick="selectType('${esc(t)}')">${esc(t)}</button>`;
+  }).join('');
 }
 
 function renderTagChips() {
   const wrap = document.getElementById('tags-wrap');
-  const allTags = [...new Set([...DEFAULT_TAGS, ...documents.flatMap(d=>d.tags||[]), ...selectedTags])];
+  const activeTags = getActiveTagList();
+  const docTags = documents.flatMap(d=>d.tags||[]);
+  const allTags = [...new Set([...activeTags, ...docTags, ...selectedTags])];
   wrap.innerHTML = allTags.map(t => `
     <button class="tag-chip ${selectedTags.includes(t)?'selected':''}" onclick="toggleTag('${esc(t)}')">${esc(t)}</button>
   `).join('');
@@ -1911,7 +2047,8 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('view-' + tab).classList.add('active');
   document.getElementById('tab-' + tab).classList.add('active');
-  if (tab === 'archive') loadDocuments();
+  if (tab === 'archive') { loadDocuments(); renderFilterBar(); }
+  if (tab === 'settings') { renderDocTypeManager(); renderTagManager(); }
 }
 
 // ===== SHEETS =====
@@ -1962,49 +2099,98 @@ function initCrop(dataUrl, callback) {
 function autoDetectCrop(img) {
   try {
     const canvas = document.createElement('canvas');
-    // Use larger size for better detection
-    const maxDim = 400;
+    const maxDim = 600;
     const scale = Math.min(maxDim / img.naturalWidth, maxDim / img.naturalHeight);
     canvas.width = Math.floor(img.naturalWidth * scale);
     canvas.height = Math.floor(img.naturalHeight * scale);
     const ctx = canvas.getContext('2d');
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const px = imgData.data;
     const W = canvas.width, H = canvas.height;
 
-    // Scan rows/cols for significant brightness change from edges
-    // This works better than simple thresholding for real photos
-    function rowBrightness(y) {
-      let sum = 0;
-      for (let x = 0; x < W; x++) {
-        const i = (y * W + x) * 4;
-        sum += (data[i] + data[i+1] + data[i+2]) / 3;
-      }
-      return sum / W;
-    }
-    function colBrightness(x) {
-      let sum = 0;
-      for (let y = 0; y < H; y++) {
-        const i = (y * W + x) * 4;
-        sum += (data[i] + data[i+1] + data[i+2]) / 3;
-      }
-      return sum / H;
+    // Step 1: Build grayscale + apply Gaussian blur (3x3) to reduce noise
+    const gray = new Float32Array(W * H);
+    for (let i = 0; i < W * H; i++) {
+      const p = i * 4;
+      gray[i] = 0.299 * px[p] + 0.587 * px[p+1] + 0.114 * px[p+2];
     }
 
-    // Find edges by looking for rows/cols significantly darker than background
-    const bgBrightness = (rowBrightness(0) + rowBrightness(H-1) + colBrightness(0) + colBrightness(W-1)) / 4;
-    const threshold = bgBrightness * 0.85; // 15% darker than background
+    // Simple 3x3 box blur
+    const blurred = new Float32Array(W * H);
+    for (let y = 1; y < H-1; y++) {
+      for (let x = 1; x < W-1; x++) {
+        let sum = 0;
+        for (let dy = -1; dy <= 1; dy++)
+          for (let dx = -1; dx <= 1; dx++)
+            sum += gray[(y+dy)*W + (x+dx)];
+        blurred[y*W+x] = sum / 9;
+      }
+    }
 
+    // Step 2: Sobel edge detection
+    const edges = new Float32Array(W * H);
+    let maxEdge = 0;
+    for (let y = 1; y < H-1; y++) {
+      for (let x = 1; x < W-1; x++) {
+        const gx = -blurred[(y-1)*W+(x-1)] + blurred[(y-1)*W+(x+1)]
+                   -2*blurred[y*W+(x-1)] + 2*blurred[y*W+(x+1)]
+                   -blurred[(y+1)*W+(x-1)] + blurred[(y+1)*W+(x+1)];
+        const gy = -blurred[(y-1)*W+(x-1)] - 2*blurred[(y-1)*W+x] - blurred[(y-1)*W+(x+1)]
+                   +blurred[(y+1)*W+(x-1)] + 2*blurred[(y+1)*W+x] + blurred[(y+1)*W+(x+1)];
+        const mag = Math.sqrt(gx*gx + gy*gy);
+        edges[y*W+x] = mag;
+        if (mag > maxEdge) maxEdge = mag;
+      }
+    }
+
+    // Step 3: Threshold edges and find document bounds using edge density per row/col
+    const edgeThreshold = maxEdge * 0.15;
+    
+    // Count edge pixels per row and column
+    const rowEdges = new Float32Array(H);
+    const colEdges = new Float32Array(W);
+    for (let y = 1; y < H-1; y++) {
+      for (let x = 1; x < W-1; x++) {
+        if (edges[y*W+x] > edgeThreshold) {
+          rowEdges[y]++;
+          colEdges[x]++;
+        }
+      }
+    }
+
+    // Find the min edge density threshold (rows/cols with significant edges)
+    const avgRowEdges = rowEdges.reduce((a,b)=>a+b,0) / H;
+    const avgColEdges = colEdges.reduce((a,b)=>a+b,0) / W;
+    const rowThresh = avgRowEdges * 0.3;
+    const colThresh = avgColEdges * 0.3;
+
+    // Scan from edges inward to find document boundary
     let top = 0, bottom = H-1, left = 0, right = W-1;
-    for (let y = 0; y < H/2; y++) { if (rowBrightness(y) < threshold) { top = Math.max(0, y - 3); break; } }
-    for (let y = H-1; y > H/2; y--) { if (rowBrightness(y) < threshold) { bottom = Math.min(H-1, y + 3); break; } }
-    for (let x = 0; x < W/2; x++) { if (colBrightness(x) < threshold) { left = Math.max(0, x - 3); break; } }
-    for (let x = W-1; x > W/2; x--) { if (colBrightness(x) < threshold) { right = Math.min(W-1, x + 3); break; } }
+    const margin = Math.floor(Math.min(W, H) * 0.02);
+
+    // Find top edge: first row with significant edges
+    for (let y = 0; y < H * 0.4; y++) {
+      if (rowEdges[y] > rowThresh) { top = Math.max(0, y - margin); break; }
+    }
+    // Find bottom edge
+    for (let y = H-1; y > H * 0.6; y--) {
+      if (rowEdges[y] > rowThresh) { bottom = Math.min(H-1, y + margin); break; }
+    }
+    // Find left edge
+    for (let x = 0; x < W * 0.4; x++) {
+      if (colEdges[x] > colThresh) { left = Math.max(0, x - margin); break; }
+    }
+    // Find right edge
+    for (let x = W-1; x > W * 0.6; x--) {
+      if (colEdges[x] > colThresh) { right = Math.min(W-1, x + margin); break; }
+    }
 
     const foundW = right - left;
     const foundH = bottom - top;
 
-    if (foundW > W * 0.2 && foundH > H * 0.2 && foundW < W * 0.98 && foundH < H * 0.98) {
+    // Only use detected crop if it makes sense (document found is between 25% and 97% of image)
+    if (foundW > W * 0.25 && foundH > H * 0.25 && (foundW < W * 0.97 || foundH < H * 0.97)) {
       cropRect = {
         x: (left / W) * 100,
         y: (top / H) * 100,
@@ -2012,10 +2198,10 @@ function autoDetectCrop(img) {
         h: (foundH / H) * 100
       };
     } else {
-      cropRect = { x: 3, y: 3, w: 94, h: 94 };
+      cropRect = { x: 2, y: 2, w: 96, h: 96 };
     }
   } catch(e) {
-    cropRect = { x: 3, y: 3, w: 94, h: 94 };
+    cropRect = { x: 2, y: 2, w: 96, h: 96 };
   }
 }
 
@@ -2080,7 +2266,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('mouseup', onEnd);
 });
 
-function applyCrop() {
+function getCroppedDataUrl() {
   const img = document.getElementById('crop-img');
   const canvas = document.createElement('canvas');
   const iw = img.naturalWidth;
@@ -2093,8 +2279,28 @@ function applyCrop() {
   canvas.height = sh;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
-  const cropped = canvas.toDataURL('image/jpeg', 0.92);
+  return canvas.toDataURL('image/jpeg', 0.92);
+}
+
+function applyCrop() {
+  const cropped = getCroppedDataUrl();
+  // Show preview instead of immediately proceeding
+  document.getElementById('crop-preview-img').src = cropped;
+  document.getElementById('crop-step-edit').style.display = 'none';
+  document.getElementById('crop-step-preview').style.display = 'block';
+}
+
+function cropBackToEdit() {
+  document.getElementById('crop-step-preview').style.display = 'none';
+  document.getElementById('crop-step-edit').style.display = 'block';
+}
+
+function cropConfirm() {
+  const cropped = getCroppedDataUrl();
   closeSheet('crop-sheet');
+  // Reset to edit step for next time
+  document.getElementById('crop-step-preview').style.display = 'none';
+  document.getElementById('crop-step-edit').style.display = 'block';
   cropCallback && cropCallback(cropped);
 }
 
@@ -2102,6 +2308,103 @@ function skipCrop() {
   closeSheet('crop-sheet');
   const original = document.getElementById('crop-img').src;
   cropCallback && cropCallback(original);
+}
+
+
+// ===== DOC TYPE + TAG MANAGEMENT =====
+const BUILTIN_DOC_TYPES = ['Rechnung', 'Vertrag', 'Allgemein'];
+const BUILTIN_TAGS = ['Steuer','Versicherung','Wohnung','Auto','Energie','Arzt/Gesundheit','Schule/Kita'];
+
+function loadDocTypes() {
+  const saved = localStorage.getItem('docTypes');
+  if (saved) return JSON.parse(saved);
+  return BUILTIN_DOC_TYPES.map(t => ({ name: t, active: true }));
+}
+function saveDocTypes(types) { localStorage.setItem('docTypes', JSON.stringify(types)); }
+function getActiveDocTypes() { return loadDocTypes().filter(t => t.active).map(t => t.name); }
+
+function loadManagedTags() {
+  const saved = localStorage.getItem('managedTags');
+  if (saved) return JSON.parse(saved);
+  return BUILTIN_TAGS.map(t => ({ name: t, active: true }));
+}
+function saveManagedTags(tags) { localStorage.setItem('managedTags', JSON.stringify(tags)); }
+function getActiveTagList() { return loadManagedTags().filter(t => t.active).map(t => t.name); }
+
+function renderDocTypeManager() {
+  const types = loadDocTypes();
+  const list = document.getElementById('doctype-list');
+  if (!list) return;
+  list.innerHTML = types.map((t, i) => `
+    <div class="manage-item ${t.active?'':'disabled'}">
+      <span>${esc(t.name)}</span>
+      <button class="manage-toggle ${t.active?'on':''}" onclick="toggleDocType(${i})"></button>
+    </div>
+  `).join('');
+}
+
+function toggleDocType(index) {
+  const types = loadDocTypes();
+  // Don't allow deactivating all types
+  const activeCount = types.filter(t => t.active).length;
+  if (types[index].active && activeCount <= 1) {
+    showToast('Mindestens eine Art muss aktiv sein');
+    return;
+  }
+  types[index].active = !types[index].active;
+  saveDocTypes(types);
+  renderDocTypeManager();
+}
+
+function addDocType() {
+  const input = document.getElementById('doctype-add-input');
+  const val = input.value.trim();
+  if (!val) return;
+  const types = loadDocTypes();
+  if (types.some(t => t.name.toLowerCase() === val.toLowerCase())) {
+    showToast('Diese Art existiert bereits');
+    return;
+  }
+  types.push({ name: val, active: true });
+  saveDocTypes(types);
+  input.value = '';
+  renderDocTypeManager();
+  showToast('Art hinzugefügt ✓');
+}
+
+function renderTagManager() {
+  const tags = loadManagedTags();
+  const list = document.getElementById('tag-manage-list');
+  if (!list) return;
+  list.innerHTML = tags.map((t, i) => `
+    <div class="manage-item ${t.active?'':'disabled'}">
+      <span>${esc(t.name)}</span>
+      <button class="manage-toggle ${t.active?'on':''}" onclick="toggleManagedTag(${i})"></button>
+    </div>
+  `).join('');
+}
+
+function toggleManagedTag(index) {
+  const tags = loadManagedTags();
+  tags[index].active = !tags[index].active;
+  saveManagedTags(tags);
+  renderTagManager();
+}
+
+function addManagedTag() {
+  const input = document.getElementById('tag-add-input');
+  const val = input.value.trim();
+  if (!val) return;
+  const tags = loadManagedTags();
+  if (tags.some(t => t.name.toLowerCase() === val.toLowerCase())) {
+    showToast('Dieser Tag existiert bereits');
+    return;
+  }
+  tags.push({ name: val, active: true });
+  saveManagedTags(tags);
+  input.value = '';
+  renderTagManager();
+  showToast('Tag hinzugefügt ✓');
 }
 
 // ===== START =====
