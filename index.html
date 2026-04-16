@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Bäumer Docs">
+<title>Bäumer Docs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;1,300;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FBF8F3;
+    --surface: #FFFFFF;
+    --border: #F0EAE0;
+    --text: #2D2520;
+    --muted: #B8A99A;
+    --accent: #E07A5F;
+    --blue: #6B7FD7;
+    --green: #5A8A5E;
+    --yellow: #F2CC8F;
+    --radius: 14px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-top: env(safe-area-inset-top, 0px);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'IBM Plex Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  /* ===== APP SHELL ===== */
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    height: 100vh;
+  }
+
+  .view { display: none; flex: 1; overflow-y: auto; overflow-x: hidden; }
+  .view.active { display: flex; flex-direction: column; }
+
+  /* ===== NAV BAR ===== */
+  .navbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: calc(var(--safe-top) + 12px) 20px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+
+  .navbar h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-style: italic;
+    font-size: 22px;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+
+  .navbar-action {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 20px;
+    transition: background 0.15s;
+  }
+  .navbar-action:active { background: var(--border); }
+
+  /* ===== BOTTOM TAB BAR ===== */
+  .tabbar {
+    display: flex;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding-bottom: max(env(safe-area-inset-bottom), 20px);
+    flex-shrink: 0;
+  }
+
+  .tab-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 2px 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    transition: color 0.15s;
+    min-width: 0;
+  }
+  .tab-btn.active { color: var(--accent); }
+  .tab-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
+
+  /* ===== SCAN VIEW ===== */
+  .scan-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 24px;
+    gap: 20px;
+  }
+
+  .camera-btn-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .camera-btn {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 32px rgba(224, 122, 95, 0.35);
+    transition: transform 0.12s, box-shadow 0.12s;
+    position: relative;
+  }
+  .camera-btn:active { transform: scale(0.94); box-shadow: 0 4px 16px rgba(224,122,95,0.3); }
+  .camera-btn svg { width: 44px; height: 44px; color: white; }
+
+  .camera-ring {
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 2px solid rgba(224,122,95,0.25);
+    pointer-events: none;
+  }
+
+  .upload-btn {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 28px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: border-color 0.15s;
+  }
+  .upload-btn:active { border-color: var(--accent); }
+
+  .scan-hint {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.6;
+    max-width: 260px;
+  }
+
+  /* ===== HIDDEN FILE INPUTS ===== */
+  #camera-input, #file-input { display: none; }
+
+  /* ===== OCR PROGRESS ===== */
+  .ocr-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(251,248,243,0.95);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    gap: 20px;
+  }
+  .ocr-overlay.visible { display: flex; }
+
+  .ocr-spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .ocr-label {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .ocr-progress-bar {
+    width: 200px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .ocr-progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s;
+    width: 0%;
+  }
+
+  /* ===== PREVIEW SHEET ===== */
+  .sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: none;
+    flex-direction: column;
+  }
+  .sheet.open { display: flex; }
+
+  .sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(45,37,32,0.4);
+  }
+
+  .sheet-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg);
+    border-radius: 20px 20px 0 0;
+    max-height: 92dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: calc(max(var(--safe-bottom), 16px) + 20px);
+    animation: slideUp 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+  .sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 12px auto 0;
+  }
+
+  .sheet-header {
+    padding: 16px 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sheet-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-style: italic;
+    font-size: 20px;
+  }
+
+  .sheet-close {
+    background: var(--border);
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+  }
+
+  /* ===== PREVIEW IMAGE ===== */
+  .preview-img-wrap {
+    margin: 16px 20px;
+    border-radius: 12px;
+    overflow: hidden;
+    max-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--border);
+  }
+  .preview-img-wrap img {
+    width: 100%;
+    object-fit: contain;
+    max-height: 200px;
+  }
+
+  /* ===== FORM ===== */
+  .form-body { padding: 0 20px; display: flex; flex-direction: column; gap: 14px; width: 100%; box-sizing: border-box; overflow-x: hidden; }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+  .form-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .form-input {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  .form-input:focus { border-color: var(--accent); }
+
+  /* ===== TYPE SELECTOR ===== */
+  .type-pills {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+  .type-pill { flex: 1; min-width: 0; }
+
+  .type-pill {
+    flex: 1;
+    padding: 10px 6px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: center;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+  .type-pill.active[data-type="Rechnung"] { border-color: var(--accent); color: var(--accent); background: rgba(224,122,95,0.08); }
+  .type-pill.active[data-type="Vertrag"] { border-color: var(--blue); color: var(--blue); background: rgba(107,127,215,0.08); }
+  .type-pill.active[data-type="Allgemein"] { border-color: var(--green); color: var(--green); background: rgba(90,138,94,0.08); }
+
+  /* ===== TAGS ===== */
+  .tags-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tag-chip {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    cursor: pointer;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+  .tag-chip.selected {
+    background: var(--text);
+    border-color: var(--text);
+    color: var(--bg);
+  }
+
+  .tag-input-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .tag-input-row .form-input { flex: 1; }
+  .tag-add-btn {
+    background: var(--text);
+    color: var(--bg);
+    border: none;
+    border-radius: 10px;
+    padding: 0 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  /* ===== AI TOGGLE ===== */
+  .ai-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+
+  .ai-label { font-size: 13px; }
+  .ai-sublabel { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .toggle {
+    width: 44px;
+    height: 26px;
+    border-radius: 13px;
+    background: var(--border);
+    position: relative;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--accent); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+  .toggle.on::after { transform: translateX(18px); }
+
+  /* ===== SAVE BUTTON ===== */
+  .save-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 4px;
+    transition: opacity 0.15s;
+    letter-spacing: 0.02em;
+  }
+  .save-btn:active { opacity: 0.85; }
+  .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ===== ARCHIVE VIEW ===== */
+  .filter-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    flex-shrink: 0;
+    scrollbar-width: none;
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
+
+  .filter-chip {
+    padding: 7px 12px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .filter-chip.active { background: var(--text); border-color: var(--text); color: var(--bg); }
+
+  .search-wrap {
+    padding: 12px 16px 0;
+    flex-shrink: 0;
+  }
+
+  .search-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px 10px 36px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+
+  .search-wrap-inner {
+    position: relative;
+  }
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    width: 16px;
+    height: 16px;
+  }
+
+  /* ===== DOCUMENT LIST ===== */
+  .doc-list {
+    flex: 1;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+  }
+
+  .doc-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: stretch;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow: 0 1px 4px rgba(45,37,32,0.06);
+  }
+  .doc-card:active { transform: scale(0.98); }
+
+  .doc-stripe {
+    width: 5px;
+    flex-shrink: 0;
+  }
+  .stripe-Rechnung { background: var(--accent); }
+  .stripe-Vertrag { background: var(--blue); }
+  .stripe-Allgemein { background: var(--green); }
+
+  .doc-body {
+    flex: 1;
+    padding: 12px 14px;
+    min-width: 0;
+  }
+
+  .doc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .doc-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+  }
+
+  .doc-amount {
+    font-size: 14px;
+    color: var(--accent);
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  .doc-meta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 5px;
+    flex-wrap: wrap;
+  }
+
+  .doc-date { font-size: 11px; color: var(--muted); }
+  .doc-by { font-size: 11px; color: var(--muted); }
+
+  .doc-tags {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+
+  .doc-tag {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .doc-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: white;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    align-self: center;
+    margin-right: 12px;
+  }
+
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 40px 20px;
+    color: var(--muted);
+  }
+
+  .empty-state svg { width: 48px; height: 48px; opacity: 0.4; }
+  .empty-state p { font-size: 13px; text-align: center; line-height: 1.6; }
+
+  /* ===== DETAIL SHEET ===== */
+  .detail-img {
+    width: 100%;
+    max-height: 280px;
+    object-fit: contain;
+    background: var(--bg);
+  }
+
+  .detail-section {
+    padding: 16px 20px 0;
+  }
+
+  .detail-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-size: 22px;
+    margin-bottom: 4px;
+  }
+
+  .detail-type-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    margin-bottom: 12px;
+  }
+  .badge-Rechnung { background: rgba(224,122,95,0.12); color: var(--accent); }
+  .badge-Vertrag { background: rgba(107,127,215,0.12); color: var(--blue); }
+  .badge-Allgemein { background: rgba(90,138,94,0.12); color: var(--green); }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row-label { color: var(--muted); }
+
+  .ocr-text-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 11px;
+    line-height: 1.7;
+    color: var(--muted);
+    max-height: 120px;
+    overflow-y: auto;
+    margin-top: 8px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .export-btn {
+    width: calc(100% - 40px);
+    margin: 16px 20px 0;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--text);
+    transition: border-color 0.15s;
+  }
+  .export-btn:active { border-color: var(--accent); }
+
+  /* ===== SETTINGS VIEW ===== */
+  .settings-content { padding: 20px 20px; display: flex; flex-direction: column; gap: 16px; }
+
+  .settings-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .settings-row {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row.danger { color: #E05F5F; }
+
+  .settings-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 16px 6px; }
+
+  .workspace-badge {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 0 16px 14px;
+    word-break: break-all;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .copy-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* ===== AUTH SCREEN ===== */
+  #auth-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 30px;
+    gap: 0;
+  }
+
+  .auth-logo {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-style: italic;
+    font-size: 38px;
+    color: var(--text);
+    margin-bottom: 6px;
+    letter-spacing: -1px;
+  }
+
+  .auth-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 40px;
+  }
+
+  .auth-form { width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 12px; }
+
+  .auth-error {
+    background: rgba(224,95,95,0.1);
+    border: 1px solid rgba(224,95,95,0.3);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #E05F5F;
+    display: none;
+  }
+  .auth-error.visible { display: block; }
+
+  .auth-tabs {
+    display: flex;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 3px;
+    margin-bottom: 4px;
+  }
+
+  .auth-tab {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+    background: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.15s;
+  }
+  .auth-tab.active { background: var(--accent); color: white; }
+
+  .auth-name-row { display: none; }
+  .auth-name-row.visible { display: flex; flex-direction: column; gap: 6px; }
+
+  .auth-submit {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 15px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 4px;
+    transition: opacity 0.15s;
+  }
+  .auth-submit:active { opacity: 0.85; }
+
+  .auth-invite-hint {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+
+  /* ===== TOAST ===== */
+  .toast {
+    position: fixed;
+    bottom: calc(var(--safe-bottom) + 80px);
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--text);
+    color: var(--bg);
+    padding: 10px 18px;
+    border-radius: 20px;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 9999;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ===== LOADING ===== */
+  .loading-dots {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
+  .loading-dots span {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--muted);
+    animation: bounce 0.8s infinite;
+  }
+  .loading-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce { 0%,80%,100% { transform: scale(0.7); opacity: 0.5; } 40% { transform: scale(1); opacity: 1; } }
+
+  /* ===== AMOUNT INPUT ===== */
+  .amount-row { display: flex; gap: 8px; width: 100%; }
+  .amount-row .form-input:first-child { flex: 1; min-width: 0; }
+  .currency-select {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    color: var(--text);
+    outline: none;
+    width: 80px;
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-logo">Bäumer Docs</div>
+  <div class="auth-sub">Familien-Dokumentenarchiv</div>
+
+  <div class="auth-form">
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Anmelden</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">Registrieren</button>
+    </div>
+
+    <div class="auth-error" id="auth-error"></div>
+
+    <div class="auth-name-row" id="auth-name-row">
+      <label class="form-label">Dein Name</label>
+      <input class="form-input" id="auth-name" type="text" placeholder="z.B. Hendrik" autocomplete="name">
+    </div>
+
+    <div>
+      <label class="form-label">E-Mail</label>
+      <input class="form-input" id="auth-email" type="email" placeholder="name@email.de" autocomplete="email" style="margin-top:6px">
+    </div>
+
+    <div>
+      <label class="form-label">Passwort</label>
+      <input class="form-input" id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password" style="margin-top:6px">
+    </div>
+
+    <button class="auth-submit" id="auth-submit-btn" onclick="handleAuth()">Anmelden</button>
+    <div class="auth-invite-hint" id="auth-invite-hint"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+  <!-- SCAN VIEW -->
+  <div class="view active" id="view-scan">
+    <div class="navbar">
+      <h1>Bäumer Docs</h1>
+      <span id="user-greeting" style="font-size:12px;color:var(--muted)"></span>
+    </div>
+    <div class="scan-area">
+      <div class="camera-btn-wrap">
+        <button class="camera-btn" onclick="triggerCamera()">
+          <div class="camera-ring"></div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+        </button>
+        <span style="font-size:12px;color:var(--muted)">Foto aufnehmen</span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:12px;color:var(--muted)">
+        <div style="height:1px;width:60px;background:var(--border)"></div>
+        <span style="font-size:11px">oder</span>
+        <div style="height:1px;width:60px;background:var(--border)"></div>
+      </div>
+
+      <button class="upload-btn" onclick="triggerUpload()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/>
+          <line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        Datei auswählen
+      </button>
+
+      <p class="scan-hint">Rechnung, Vertrag oder Dokument fotografieren — OCR erkennt den Text automatisch</p>
+    </div>
+  </div>
+
+  <!-- ARCHIVE VIEW -->
+  <div class="view" id="view-archive">
+    <div class="navbar">
+      <h1>Archiv</h1>
+      <span id="doc-count" style="font-size:12px;color:var(--muted)"></span>
+    </div>
+    <div class="filter-bar" id="filter-bar">
+      <button class="filter-chip active" onclick="setFilter('all',this)">Alle</button>
+      <button class="filter-chip" onclick="setFilter('Rechnung',this)">📄 Rechnungen</button>
+      <button class="filter-chip" onclick="setFilter('Vertrag',this)">📋 Verträge</button>
+      <button class="filter-chip" onclick="setFilter('Allgemein',this)">📁 Allgemein</button>
+    </div>
+    <div class="search-wrap">
+      <div class="search-wrap-inner">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input class="search-input" id="search-input" placeholder="Suchen..." oninput="renderDocuments()">
+      </div>
+    </div>
+    <div class="doc-list" id="doc-list">
+      <div class="loading-dots"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS VIEW -->
+  <div class="view" id="view-settings">
+    <div class="navbar"><h1>Einst.</h1></div>
+    <div class="settings-content">
+
+      <div class="settings-section">
+        <div class="settings-label">Workspace</div>
+        <div class="settings-row" style="cursor:default">
+          <span>👨‍👩‍👧‍👦 Bäumer Familie</span>
+          <span style="color:var(--muted);font-size:12px" id="member-count"></span>
+        </div>
+        <div id="invite-link-wrap" style="display:none">
+          <div class="workspace-badge">
+            <span id="invite-link-text" style="flex:1;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+            <button class="copy-btn" onclick="copyInviteLink()">Kopieren</button>
+          </div>
+        </div>
+        <div class="settings-row" onclick="generateInviteLink()">
+          <span>🔗 Einladungslink erstellen</span>
+          <span style="color:var(--muted)">›</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-label">KI-Analyse</div>
+        <div class="settings-row" style="cursor:default">
+          <div>
+            <div class="ai-label">🤖 Anthropic API</div>
+            <div class="ai-sublabel">Noch kein API Key eingerichtet</div>
+          </div>
+          <span style="font-size:11px;color:var(--muted)">Deaktiviert</span>
+        </div>
+        <div class="settings-row" onclick="showApiKeyInput()">
+          <span>API Key eingeben</span>
+          <span style="color:var(--muted)">›</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-label">Account</div>
+        <div class="settings-row" style="cursor:default">
+          <span id="settings-user-name">—</span>
+          <span id="settings-user-email" style="color:var(--muted);font-size:11px"></span>
+        </div>
+        <div class="settings-row danger" onclick="handleLogout()">
+          <span>Abmelden</span>
+          <span>›</span>
+        </div>
+      </div>
+
+      <p style="font-size:11px;color:var(--muted);text-align:center;line-height:1.6">
+        Bäumer Docs · Daten sicher in EU (Frankfurt)<br>
+        OCR läuft lokal · DSGVO-konform
+      </p>
+    </div>
+  </div>
+
+  <!-- TAB BAR -->
+  <nav class="tabbar">
+    <button class="tab-btn active" id="tab-scan" onclick="switchTab('scan')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      Scannen
+    </button>
+    <button class="tab-btn" id="tab-archive" onclick="switchTab('archive')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/>
+        <line x1="10" y1="12" x2="14" y2="12"/>
+      </svg>
+      Archiv
+    </button>
+    <button class="tab-btn" id="tab-settings" onclick="switchTab('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      Einstellungen
+    </button>
+  </nav>
+</div>
+
+<!-- OCR OVERLAY -->
+<div class="ocr-overlay" id="ocr-overlay">
+  <div class="ocr-spinner"></div>
+  <div class="ocr-label" id="ocr-label">Text wird erkannt...</div>
+  <div class="ocr-progress-bar"><div class="ocr-progress-fill" id="ocr-progress"></div></div>
+</div>
+
+<!-- SCAN SHEET -->
+<div class="sheet" id="scan-sheet">
+  <div class="sheet-backdrop" onclick="closeSheet('scan-sheet')"></div>
+  <div class="sheet-content">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">Dokument speichern</div>
+      <button class="sheet-close" onclick="closeSheet('scan-sheet')">✕</button>
+    </div>
+    <div class="preview-img-wrap" id="preview-img-wrap">
+      <img id="preview-img" src="" alt="Vorschau">
+    </div>
+    <div class="form-body">
+      <div class="form-group">
+        <label class="form-label">Titel</label>
+        <input class="form-input" id="form-title" type="text" placeholder="z.B. Stadtwerke Rechnung">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Dokumenttyp</label>
+        <div class="type-pills">
+          <button class="type-pill active" data-type="Rechnung" onclick="selectType('Rechnung')">Rechnung</button>
+          <button class="type-pill" data-type="Vertrag" onclick="selectType('Vertrag')">Vertrag</button>
+          <button class="type-pill" data-type="Allgemein" onclick="selectType('Allgemein')">Allgemein</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Betrag (optional)</label>
+        <div class="amount-row">
+          <input class="form-input" id="form-amount" type="number" placeholder="0.00" step="0.01">
+          <select class="currency-select" id="form-currency">
+            <option value="EUR">EUR</option>
+            <option value="USD">USD</option>
+            <option value="CHF">CHF</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Datum (optional)</label>
+        <input class="form-input" id="form-date" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tags</label>
+        <div class="tags-wrap" id="tags-wrap"></div>
+        <div class="tag-input-row">
+          <input class="form-input" id="tag-input" type="text" placeholder="Eigener Tag..." onkeydown="if(event.key==='Enter'){addCustomTag();event.preventDefault()}">
+          <button class="tag-add-btn" onclick="addCustomTag()">+</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">KI-Analyse</label>
+        <div class="ai-row">
+          <div>
+            <div class="ai-label">🤖 Automatisch ausfüllen</div>
+            <div class="ai-sublabel">API Key nicht eingerichtet</div>
+          </div>
+          <button class="toggle" id="ai-toggle" onclick="toggleAI()" title="Kein API Key">
+          </button>
+        </div>
+      </div>
+      <button class="save-btn" id="save-btn" onclick="saveDocument()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL SHEET -->
+<div class="sheet" id="detail-sheet">
+  <div class="sheet-backdrop" onclick="closeSheet('detail-sheet')"></div>
+  <div class="sheet-content" id="detail-content">
+    <div class="sheet-handle"></div>
+    <div id="detail-inner"></div>
+  </div>
+</div>
+
+<!-- API KEY SHEET -->
+<div class="sheet" id="apikey-sheet">
+  <div class="sheet-backdrop" onclick="closeSheet('apikey-sheet')"></div>
+  <div class="sheet-content">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">API Key eingeben</div>
+      <button class="sheet-close" onclick="closeSheet('apikey-sheet')">✕</button>
+    </div>
+    <div class="form-body" style="margin-top:16px">
+      <p style="font-size:12px;color:var(--muted);line-height:1.7">
+        Den API Key findest du unter <strong style="color:var(--text)">console.anthropic.com → API Keys</strong>. Er beginnt mit <code style="background:var(--border);padding:2px 5px;border-radius:4px">sk-ant-</code>
+      </p>
+      <input class="form-input" id="apikey-input" type="password" placeholder="sk-ant-...">
+      <button class="save-btn" onclick="saveApiKey()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- FILE INPUTS -->
+<input type="file" id="camera-input" accept="image/*" capture="environment">
+<input type="file" id="file-input" accept="image/*,application/pdf">
+
+<!-- SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- TESSERACT -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+<script>
+// ===== CONFIG =====
+const SUPABASE_URL = 'https://jfbmawrthozhtggxlknb.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmYm1hd3J0aG96aHRnZ3hsa25iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjk4MzAsImV4cCI6MjA5MTkwNTgzMH0.z8s_MHNhYveCXBlZCma7esJJszRR9Ep2Co0Lr8q6oFU';
+
+const DEFAULT_TAGS = ['Steuer','Versicherung','Wohnung','Auto','Energie','Arzt/Gesundheit','Schule/Kita'];
+
+// ===== STATE =====
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let currentUser = null;
+let currentWorkspaceId = null;
+let currentUserName = '';
+let documents = [];
+let activeFilter = 'all';
+let selectedTags = [];
+let selectedType = 'Rechnung';
+let currentImageDataUrl = null;
+let currentOcrText = '';
+let aiEnabled = false;
+let authMode = 'login';
+let inviteWorkspaceId = null;
+
+// ===== INIT =====
+async function init() {
+  // Check for invite link
+  const params = new URLSearchParams(window.location.search);
+  const inviteWs = params.get('invite');
+  if (inviteWs) {
+    inviteWorkspaceId = inviteWs;
+    switchAuthTab('register');
+    document.getElementById('auth-invite-hint').textContent = '✓ Einladungslink erkannt — registriere dich um beizutreten';
+  }
+
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    await loadUserWorkspace();
+  } else {
+    document.getElementById('auth-screen').style.display = 'flex';
+  }
+}
+
+// ===== AUTH =====
+function switchAuthTab(mode) {
+  authMode = mode;
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.auth-tab[onclick*="${mode}"]`).classList.add('active');
+  const nameRow = document.getElementById('auth-name-row');
+  nameRow.classList.toggle('visible', mode === 'register');
+  document.getElementById('auth-submit-btn').textContent = mode === 'login' ? 'Anmelden' : 'Registrieren';
+  document.getElementById('auth-error').classList.remove('visible');
+}
+
+async function handleAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const name = document.getElementById('auth-name').value.trim();
+  const btn = document.getElementById('auth-submit-btn');
+  const errEl = document.getElementById('auth-error');
+
+  if (!email || !password) { showAuthError('Bitte E-Mail und Passwort eingeben'); return; }
+  if (authMode === 'register' && !name) { showAuthError('Bitte deinen Namen eingeben'); return; }
+
+  btn.textContent = '...';
+  btn.disabled = true;
+
+  try {
+    if (authMode === 'login') {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      currentUser = data.user;
+      await loadUserWorkspace();
+    } else {
+      const { data, error } = await sb.auth.signUp({ email, password, options: { data: { display_name: name } } });
+      if (error) throw error;
+      currentUser = data.user;
+      await setupNewUser(name, inviteWorkspaceId);
+    }
+  } catch(e) {
+    showAuthError(e.message || 'Fehler beim Anmelden');
+    btn.textContent = authMode === 'login' ? 'Anmelden' : 'Registrieren';
+    btn.disabled = false;
+  }
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+async function setupNewUser(name, wsId) {
+  // Wait for Supabase to fully register the user in auth.users
+  await new Promise(r => setTimeout(r, 1500));
+
+  // Retry up to 5 times with delay
+  async function tryInsert(fn) {
+    for (let i = 0; i < 5; i++) {
+      const result = await fn();
+      if (!result.error) return result;
+      if (i < 4) await new Promise(r => setTimeout(r, 1000));
+      else throw result.error;
+    }
+  }
+
+  if (wsId) {
+    await tryInsert(() => sb.from('workspace_members').insert({
+      workspace_id: wsId,
+      user_id: currentUser.id,
+      display_name: name
+    }));
+    currentWorkspaceId = wsId;
+    currentUserName = name;
+  } else {
+    const { data: ws, error: wsErr } = await sb.from('workspaces').insert({ name: 'Bäumer Familie' }).select().single();
+    if (wsErr) throw wsErr;
+    await tryInsert(() => sb.from('workspace_members').insert({
+      workspace_id: ws.id,
+      user_id: currentUser.id,
+      display_name: name
+    }));
+    currentWorkspaceId = ws.id;
+    currentUserName = name;
+  }
+  showApp();
+}
+
+async function loadUserWorkspace() {
+  const { data: members } = await sb.from('workspace_members').select('workspace_id, display_name').eq('user_id', currentUser.id);
+  if (!members || members.length === 0) {
+    // User exists but no workspace yet — create one automatically
+    const name = currentUser.user_metadata?.display_name || currentUser.email.split('@')[0];
+    await setupNewUser(name, null);
+    return;
+  }
+  currentWorkspaceId = members[0].workspace_id;
+  currentUserName = members[0].display_name || currentUser.email.split('@')[0];
+  showApp();
+}
+
+async function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('user-greeting').textContent = currentUserName;
+  document.getElementById('settings-user-name').textContent = currentUserName;
+  document.getElementById('settings-user-email').textContent = currentUser.email;
+
+  // Load API key from localStorage
+  const savedKey = localStorage.getItem('anthropic_key');
+  if (savedKey) {
+    aiEnabled = false; // Don't auto-enable, user decides per doc
+  }
+
+  await loadDocuments();
+  subscribeRealtime();
+  renderTagChips();
+  // Remove invite param from URL
+  if (window.location.search) history.replaceState({}, '', window.location.pathname);
+}
+
+async function handleLogout() {
+  await sb.auth.signOut();
+  location.reload();
+}
+
+// ===== DOCUMENTS =====
+async function loadDocuments() {
+  const { data, error } = await sb.from('documents')
+    .select('*')
+    .eq('workspace_id', currentWorkspaceId)
+    .eq('archived', false)
+    .order('created_at', { ascending: false });
+
+  if (error) { console.error(error); return; }
+  documents = data || [];
+  renderDocuments();
+  document.getElementById('doc-count').textContent = documents.length + ' Dok.';
+}
+
+function subscribeRealtime() {
+  sb.channel('docs').on('postgres_changes', {
+    event: '*', schema: 'public', table: 'documents',
+    filter: `workspace_id=eq.${currentWorkspaceId}`
+  }, () => loadDocuments()).subscribe();
+}
+
+function renderDocuments() {
+  const list = document.getElementById('doc-list');
+  const search = document.getElementById('search-input').value.toLowerCase();
+
+  let filtered = documents.filter(d => {
+    if (activeFilter !== 'all' && d.type !== activeFilter) return false;
+    if (search) {
+      const hay = (d.title + ' ' + (d.ocr_text||'') + ' ' + (d.tags||[]).join(' ')).toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+      </svg>
+      <p>Noch keine Dokumente<br>Tippe auf 📷 um loszulegen</p>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(doc => {
+    const date = doc.document_date ? new Date(doc.document_date).toLocaleDateString('de-DE') :
+                 new Date(doc.created_at).toLocaleDateString('de-DE');
+    const tags = (doc.tags || []).slice(0,3).map(t => `<span class="doc-tag">${t}</span>`).join('');
+    const amount = doc.amount ? `<span class="doc-amount">${parseFloat(doc.amount).toLocaleString('de-DE',{style:'currency',currency:doc.currency||'EUR'})}</span>` : '';
+    const initials = (doc.added_by_name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const avatarColor = doc.added_by_name === currentUserName ? 'var(--accent)' : 'var(--blue)';
+
+    return `<div class="doc-card" onclick="showDetail('${doc.id}')">
+      <div class="doc-stripe stripe-${doc.type||'Allgemein'}"></div>
+      <div class="doc-body">
+        <div class="doc-header">
+          <span class="doc-title">${esc(doc.title)}</span>
+          ${amount}
+        </div>
+        <div class="doc-meta">
+          <span class="doc-date">${date}</span>
+          <span class="doc-by">· ${esc(doc.added_by_name||'')}</span>
+        </div>
+        ${tags ? `<div class="doc-tags">${tags}</div>` : ''}
+      </div>
+      <div class="doc-avatar" style="background:${avatarColor}">${initials}</div>
+    </div>`;
+  }).join('');
+}
+
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderDocuments();
+}
+
+// ===== DETAIL =====
+function showDetail(id) {
+  const doc = documents.find(d => d.id === id);
+  if (!doc) return;
+
+  const date = doc.document_date ? new Date(doc.document_date).toLocaleDateString('de-DE',{day:'2-digit',month:'long',year:'numeric'}) :
+               new Date(doc.created_at).toLocaleDateString('de-DE',{day:'2-digit',month:'long',year:'numeric'});
+  const tags = (doc.tags||[]).map(t=>`<span class="doc-tag" style="font-size:12px;padding:4px 10px">${esc(t)}</span>`).join('');
+
+  document.getElementById('detail-inner').innerHTML = `
+    ${doc.image_url ? `<img class="detail-img" src="${doc.image_url}" alt="Dokument">` : ''}
+    <div class="detail-section">
+      <div class="detail-title">${esc(doc.title)}</div>
+      <span class="detail-type-badge badge-${doc.type||'Allgemein'}">${doc.type||'Allgemein'}</span>
+      ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px">${tags}</div>` : ''}
+      <div class="detail-row">
+        <span class="detail-row-label">Datum</span>
+        <span>${date}</span>
+      </div>
+      ${doc.amount ? `<div class="detail-row">
+        <span class="detail-row-label">Betrag</span>
+        <span>${parseFloat(doc.amount).toLocaleString('de-DE',{style:'currency',currency:doc.currency||'EUR'})}</span>
+      </div>` : ''}
+      <div class="detail-row">
+        <span class="detail-row-label">Hinzugefügt von</span>
+        <span>${esc(doc.added_by_name||'')}</span>
+      </div>
+      ${doc.ocr_text ? `<div class="detail-row" style="flex-direction:column;gap:8px">
+        <span class="detail-row-label">Erkannter Text</span>
+        <div class="ocr-text-box">${esc(doc.ocr_text)}</div>
+      </div>` : ''}
+    </div>
+    ${doc.image_url ? `<button class="export-btn" onclick="exportImage('${doc.image_url}','${esc(doc.title)}')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+        <polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+      </svg>
+      Bild teilen / exportieren
+    </button>` : ''}
+    <div style="height:20px"></div>
+  `;
+
+  document.getElementById('detail-sheet').classList.add('open');
+}
+
+function exportImage(url, title) {
+  if (navigator.share) {
+    fetch(url).then(r=>r.blob()).then(blob => {
+      const file = new File([blob], `${title}.jpg`, { type: blob.type });
+      navigator.share({ files: [file], title });
+    }).catch(() => window.open(url, '_blank'));
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
+// ===== SCAN =====
+function triggerCamera() {
+  document.getElementById('camera-input').click();
+}
+function triggerUpload() {
+  document.getElementById('file-input').click();
+}
+
+document.getElementById('camera-input').addEventListener('change', e => handleFile(e.target.files[0]));
+document.getElementById('file-input').addEventListener('change', e => handleFile(e.target.files[0]));
+
+async function handleFile(file) {
+  if (!file) return;
+
+  // Reset form
+  selectedTags = [];
+  selectedType = 'Rechnung';
+  currentOcrText = '';
+  document.getElementById('form-title').value = '';
+  document.getElementById('form-amount').value = '';
+  document.getElementById('form-date').value = '';
+  document.querySelectorAll('.type-pill').forEach(p => p.classList.remove('active'));
+  document.querySelector('.type-pill[data-type="Rechnung"]').classList.add('active');
+  renderTagChips();
+
+  // Show image preview
+  const reader = new FileReader();
+  reader.onload = async e => {
+    currentImageDataUrl = e.target.result;
+    document.getElementById('preview-img').src = currentImageDataUrl;
+    document.getElementById('preview-img-wrap').style.display = 'flex';
+
+    // Run OCR
+    await runOCR(file);
+    openSheet('scan-sheet');
+  };
+  reader.readAsDataURL(file);
+}
+
+async function runOCR(file) {
+  const overlay = document.getElementById('ocr-overlay');
+  const label = document.getElementById('ocr-label');
+  const progress = document.getElementById('ocr-progress');
+  overlay.classList.add('visible');
+
+  try {
+    const result = await Tesseract.recognize(file, 'deu', {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          const pct = Math.round(m.progress * 100);
+          progress.style.width = pct + '%';
+          label.textContent = `Text wird erkannt... ${pct}%`;
+        }
+      }
+    });
+    currentOcrText = result.data.text;
+
+    // Auto-fill title from first meaningful line
+    const lines = currentOcrText.split('\n').map(l=>l.trim()).filter(l=>l.length > 3);
+    if (lines.length > 0 && !document.getElementById('form-title').value) {
+      document.getElementById('form-title').value = lines[0].slice(0, 60);
+    }
+
+    // Try to find a date
+    const dateMatch = currentOcrText.match(/(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})/);
+    if (dateMatch && !document.getElementById('form-date').value) {
+      try {
+        const [_, d, m, y] = dateMatch;
+        const year = y.length === 2 ? '20' + y : y;
+        document.getElementById('form-date').value = `${year}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+      } catch(e) {}
+    }
+
+    // Try to find amount
+    const amountMatch = currentOcrText.match(/(\d{1,4}[,\.]\d{2})\s*€?/);
+    if (amountMatch && !document.getElementById('form-amount').value) {
+      document.getElementById('form-amount').value = amountMatch[1].replace(',','.');
+    }
+
+    // Auto-detect type
+    const lower = currentOcrText.toLowerCase();
+    if (lower.includes('rechnung') || lower.includes('invoice') || lower.includes('zahlung')) {
+      selectType('Rechnung');
+    } else if (lower.includes('vertrag') || lower.includes('vereinbarung') || lower.includes('contract')) {
+      selectType('Vertrag');
+    }
+
+  } catch(e) {
+    console.error('OCR error:', e);
+  } finally {
+    overlay.classList.remove('visible');
+    progress.style.width = '0%';
+  }
+}
+
+// ===== FORM =====
+function selectType(type) {
+  selectedType = type;
+  document.querySelectorAll('.type-pill').forEach(p => {
+    p.classList.toggle('active', p.dataset.type === type);
+  });
+}
+
+function renderTagChips() {
+  const wrap = document.getElementById('tags-wrap');
+  const allTags = [...new Set([...DEFAULT_TAGS, ...documents.flatMap(d=>d.tags||[])])];
+  wrap.innerHTML = allTags.map(t => `
+    <button class="tag-chip ${selectedTags.includes(t)?'selected':''}" onclick="toggleTag('${esc(t)}')">${esc(t)}</button>
+  `).join('');
+}
+
+function toggleTag(tag) {
+  if (selectedTags.includes(tag)) {
+    selectedTags = selectedTags.filter(t => t !== tag);
+  } else {
+    selectedTags.push(tag);
+  }
+  renderTagChips();
+}
+
+function addCustomTag() {
+  const input = document.getElementById('tag-input');
+  const val = input.value.trim();
+  if (val && !selectedTags.includes(val)) {
+    selectedTags.push(val);
+    renderTagChips();
+  }
+  input.value = '';
+}
+
+function toggleAI() {
+  const key = localStorage.getItem('anthropic_key');
+  if (!key) {
+    showToast('Kein API Key — bitte in Einstellungen eingeben');
+    return;
+  }
+  aiEnabled = !aiEnabled;
+  document.getElementById('ai-toggle').classList.toggle('on', aiEnabled);
+}
+
+async function saveDocument() {
+  const title = document.getElementById('form-title').value.trim();
+  if (!title) { showToast('Bitte Titel eingeben'); return; }
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Wird gespeichert...';
+
+  try {
+    let imageUrl = null;
+
+    // Upload image to Supabase Storage
+    if (currentImageDataUrl) {
+      const blob = dataUrlToBlob(currentImageDataUrl);
+      const fileName = `${currentWorkspaceId}/${Date.now()}.jpg`;
+      const { data: uploadData, error: uploadErr } = await sb.storage.from('documents').upload(fileName, blob, { contentType: 'image/jpeg' });
+      if (!uploadErr) {
+        const { data: urlData } = sb.storage.from('documents').getPublicUrl(fileName);
+        imageUrl = urlData?.publicUrl;
+      }
+    }
+
+    // KI-Analyse (optional)
+    let aiData = null;
+    if (aiEnabled) {
+      aiData = await runAIAnalysis(currentOcrText);
+    }
+
+    const doc = {
+      workspace_id: currentWorkspaceId,
+      title: aiData?.titel || title,
+      type: aiData?.typ || selectedType,
+      tags: aiData?.tags || selectedTags,
+      ocr_text: currentOcrText,
+      amount: parseFloat(document.getElementById('form-amount').value) || null,
+      currency: document.getElementById('form-currency').value,
+      document_date: document.getElementById('form-date').value || null,
+      image_url: imageUrl,
+      added_by: currentUser.id,
+      added_by_name: currentUserName,
+      ai_analyzed: !!aiData
+    };
+
+    const { error } = await sb.from('documents').insert(doc);
+    if (error) throw error;
+
+    closeSheet('scan-sheet');
+    switchTab('archive');
+    showToast('✓ Dokument gespeichert');
+    // Reset file inputs
+    document.getElementById('camera-input').value = '';
+    document.getElementById('file-input').value = '';
+
+  } catch(e) {
+    console.error(e);
+    showToast('Fehler beim Speichern: ' + (e.message || ''));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Speichern';
+  }
+}
+
+async function runAIAnalysis(text) {
+  const key = localStorage.getItem('anthropic_key');
+  if (!key || !text) return null;
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        system: `Du bist ein Dokumenten-Analyse-Assistent. Analysiere den OCR-Text und antworte NUR mit JSON:\n{"titel":"...","typ":"Rechnung"|"Vertrag"|"Allgemein","datum":"YYYY-MM-DD oder null","betrag":Zahl oder null,"waehrung":"EUR","tags":["tag1","tag2"]}`,
+        messages: [{ role: 'user', content: text.slice(0, 2000) }]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content?.[0]?.text || '';
+    return JSON.parse(raw.replace(/```json|```/g,'').trim());
+  } catch(e) { return null; }
+}
+
+// ===== SETTINGS =====
+async function generateInviteLink() {
+  const url = `${window.location.origin}${window.location.pathname}?invite=${currentWorkspaceId}`;
+  document.getElementById('invite-link-text').textContent = url;
+  document.getElementById('invite-link-wrap').style.display = 'block';
+  showToast('Link bereit — kopieren und per iMessage senden!');
+}
+
+function copyInviteLink() {
+  const text = document.getElementById('invite-link-text').textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('Link kopiert ✓'));
+}
+
+function showApiKeyInput() {
+  const existing = localStorage.getItem('anthropic_key') || '';
+  document.getElementById('apikey-input').value = existing;
+  openSheet('apikey-sheet');
+}
+
+function saveApiKey() {
+  const key = document.getElementById('apikey-input').value.trim();
+  if (key) {
+    localStorage.setItem('anthropic_key', key);
+    showToast('API Key gespeichert ✓');
+    // Update UI
+    document.querySelector('.ai-sublabel').textContent = 'Bereit';
+  } else {
+    localStorage.removeItem('anthropic_key');
+    showToast('API Key entfernt');
+  }
+  closeSheet('apikey-sheet');
+}
+
+// ===== NAV =====
+function switchTab(tab) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + tab).classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+// ===== SHEETS =====
+function openSheet(id) { document.getElementById(id).classList.add('open'); }
+function closeSheet(id) { document.getElementById(id).classList.remove('open'); }
+
+// ===== TOAST =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===== UTILS =====
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function dataUrlToBlob(dataUrl) {
+  const [header, data] = dataUrl.split(',');
+  const mime = header.match(/:(.*?);/)[1];
+  const binary = atob(data);
+  const arr = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
+  return new Blob([arr], { type: mime });
+}
+
+// ===== START =====
+init();
+</script>
+</body>
+</html>
