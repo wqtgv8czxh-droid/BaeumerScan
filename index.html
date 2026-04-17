@@ -47,12 +47,13 @@
     flex-direction: column;
     height: 100vh;
     height: 100dvh;
-    height: calc(100vh - env(safe-area-inset-bottom, 0px));
     height: -webkit-fill-available;
+    padding-bottom: 60px;
+    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
   }
 
-  .view { display: none; flex: 1; overflow-y: auto; overflow-x: hidden; }
-  .view.active { display: flex; flex-direction: column; }
+  .view { display: none; flex: 1; overflow-y: auto; overflow-x: hidden; min-height: 0; }
+  .view.active { display: flex; flex-direction: column; min-height: 0; }
 
   /* ===== NAV BAR ===== */
   .navbar {
@@ -90,13 +91,18 @@
 
   /* ===== BOTTOM TAB BAR ===== */
   .tabbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     display: flex;
     background: var(--surface);
     border-top: 1px solid var(--border);
-    flex-shrink: 0;
-    align-items: flex-start;
-    padding: 6px 0 8px;
-    min-height: 56px;
+    align-items: center;
+    padding: 6px 0 6px;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+    z-index: 50;
+    height: auto;
   }
 
   .tab-btn {
@@ -104,8 +110,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
-    padding: 6px 0;
+    gap: 3px;
+    padding: 4px 0;
     background: none;
     border: none;
     cursor: pointer;
@@ -114,7 +120,6 @@
     font-size: 10px;
     transition: color 0.15s;
     min-width: 0;
-    overflow: visible;
   }
   .tab-btn.active { color: var(--accent); }
   .tab-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
@@ -539,6 +544,8 @@
     flex-direction: column;
     gap: 10px;
     overflow-y: auto;
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
   }
 
   .doc-card {
@@ -551,6 +558,7 @@
     cursor: pointer;
     transition: transform 0.1s, box-shadow 0.1s;
     box-shadow: 0 1px 4px rgba(45,37,32,0.06);
+    flex-shrink: 0;
   }
   .doc-card:active { transform: scale(0.98); }
 
@@ -855,7 +863,7 @@
   /* ===== TOAST ===== */
   .toast {
     position: fixed;
-    bottom: calc(var(--safe-bottom) + 80px);
+    bottom: calc(70px + env(safe-area-inset-bottom, 0px));
     left: 50%;
     transform: translateX(-50%) translateY(20px);
     background: var(--text);
