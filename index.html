@@ -32,8 +32,9 @@
     font-family: 'IBM Plex Mono', monospace;
     background: var(--bg);
     color: var(--text);
-    min-height: 100vh;
-    min-height: 100dvh;
+    height: 100vh;
+    height: 100dvh;
+    height: -webkit-fill-available;
     overflow: hidden;
     position: fixed;
     width: 100%;
@@ -44,8 +45,10 @@
   #app {
     display: flex;
     flex-direction: column;
-    height: 100dvh;
     height: 100vh;
+    height: 100dvh;
+    height: calc(100vh - env(safe-area-inset-bottom, 0px));
+    height: -webkit-fill-available;
   }
 
   .view { display: none; flex: 1; overflow-y: auto; overflow-x: hidden; }
@@ -92,7 +95,8 @@
     border-top: 1px solid var(--border);
     flex-shrink: 0;
     align-items: flex-start;
-    padding: 6px 0 max(env(safe-area-inset-bottom, 20px), 20px);
+    padding: 6px 0 8px;
+    min-height: 56px;
   }
 
   .tab-btn {
@@ -100,8 +104,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
-    padding: 4px 0 0;
+    gap: 2px;
+    padding: 6px 0;
     background: none;
     border: none;
     cursor: pointer;
@@ -110,10 +114,11 @@
     font-size: 10px;
     transition: color 0.15s;
     min-width: 0;
-    justify-content: flex-start;
+    overflow: visible;
   }
   .tab-btn.active { color: var(--accent); }
-  .tab-btn svg { width: 24px; height: 24px; flex-shrink: 0; }
+  .tab-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
+  .tab-btn span { display: block; line-height: 1; }
 
   /* ===== SCAN VIEW ===== */
   .scan-area {
@@ -1245,21 +1250,23 @@
         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
         <circle cx="12" cy="13" r="4"/>
       </svg>
-      Scannen
+      <span>Scannen</span>
     </button>
     <button class="tab-btn" id="tab-archive" onclick="switchTab('archive')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
         <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/>
         <line x1="10" y1="12" x2="14" y2="12"/>
       </svg>
-      Archiv
+      <span>Archiv</span>
     </button>
     <button class="tab-btn" id="tab-settings" onclick="switchTab('settings')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
         <circle cx="12" cy="12" r="3"/>
         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
       </svg>
-      Einstellungen
+      <span>Einstell.</span>
+    </button>
+  </nav>
     </button>
   </nav>
 </div>
@@ -1709,8 +1716,16 @@ function showDetail(id) {
     <!-- View mode -->
     <div id="detail-view-mode">
       <div class="detail-section">
-        <div class="detail-title">${esc(doc.title)}</div>
-        <span class="detail-type-badge badge-${doc.type||'Allgemein'}">${doc.type||'Allgemein'}</span>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+          <div style="flex:1;min-width:0">
+            <div class="detail-title">${esc(doc.title)}</div>
+            <span class="detail-type-badge badge-${doc.type||'Allgemein'}">${doc.type||'Allgemein'}</span>
+          </div>
+          <button onclick="startEditDoc('${doc.id}')" style="background:none;border:1.5px solid var(--border);border-radius:10px;padding:8px 12px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);cursor:pointer;flex-shrink:0;display:flex;align-items:center;gap:4px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Bearb.
+          </button>
+        </div>
         ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px">${tags}</div>` : ''}
         <div class="detail-row">
           <span class="detail-row-label">Datum</span>
@@ -1725,14 +1740,7 @@ function showDetail(id) {
           <span>${esc(doc.added_by_name||'')}</span>
         </div>
       </div>
-      <button class="export-btn" onclick="startEditDoc('${doc.id}')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-        </svg>
-        Bearbeiten
-      </button>
-      ${doc.image_url ? `<button class="export-btn" style="margin-top:8px" onclick="exportImage('${doc.image_url}','${esc(doc.title)}')">
+      ${doc.image_url ? `<button class="export-btn" onclick="exportImage('${doc.image_url}','${esc(doc.title)}')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
           <polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
@@ -2242,129 +2250,99 @@ function initCrop(dataUrl, callback) {
 function autoDetectCrop(img) {
   try {
     const canvas = document.createElement('canvas');
-    const maxDim = 500;
+    const maxDim = 400;
     const scale = Math.min(maxDim / img.naturalWidth, maxDim / img.naturalHeight);
     canvas.width = Math.floor(img.naturalWidth * scale);
     canvas.height = Math.floor(img.naturalHeight * scale);
     const ctx = canvas.getContext('2d');
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const px = imgData.data;
+    const px = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
     const W = canvas.width, H = canvas.height;
 
-    // Strategy: Documents (paper) are bright. Backgrounds (desk, table) are darker.
-    // 1. Convert to grayscale
-    const gray = new Uint8Array(W * H);
+    // Paper detection: paper is BRIGHT + LOW SATURATION
+    // Wood/desk has color saturation (brown tones). Paper is white/gray.
+    const score = new Float32Array(W * H);
     for (let i = 0; i < W * H; i++) {
       const p = i * 4;
-      gray[i] = Math.round(0.299 * px[p] + 0.587 * px[p+1] + 0.114 * px[p+2]);
+      const r = px[p], g = px[p+1], b = px[p+2];
+      const brightness = (r + g + b) / 3;
+      const maxC = Math.max(r, g, b);
+      const minC = Math.min(r, g, b);
+      const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
+      // Paper: bright (>120) and low saturation (<0.3)
+      score[i] = brightness > 120 ? (brightness / 255) * (1 - saturation) : 0;
     }
 
-    // 2. Sample the border of the image to estimate background brightness
-    let borderSum = 0, borderCount = 0;
-    const sampleBorder = 8; // pixels from edge
+    // Sample border pixels to get background score
+    let bgScoreSum = 0, bgCount = 0;
+    const border = 6;
     for (let y = 0; y < H; y++) {
       for (let x = 0; x < W; x++) {
-        if (x < sampleBorder || x >= W-sampleBorder || y < sampleBorder || y >= H-sampleBorder) {
-          borderSum += gray[y*W+x];
-          borderCount++;
+        if (x < border || x >= W-border || y < border || y >= H-border) {
+          bgScoreSum += score[y*W+x];
+          bgCount++;
         }
       }
     }
-    const bgBrightness = borderSum / borderCount;
+    const bgScore = bgScoreSum / bgCount;
 
-    // 3. Compute overall image brightness to find threshold
-    let totalSum = 0;
-    for (let i = 0; i < W*H; i++) totalSum += gray[i];
-    const avgBrightness = totalSum / (W*H);
-
-    // Threshold: halfway between background and bright paper
-    // Paper is typically much brighter than wood/dark desk
-    const threshold = bgBrightness + (255 - bgBrightness) * 0.25;
-
-    // If the background is already very bright (white desk), use edge detection fallback
-    if (bgBrightness > 210) {
+    // If background is already paper-like, can't distinguish
+    if (bgScore > 0.65) {
       cropRect = { x: 2, y: 2, w: 96, h: 96 };
       return;
     }
 
-    // 4. Create binary mask: 1 = likely paper, 0 = background
+    // Threshold between bg and paper
+    const thresh = bgScore + (0.8 - bgScore) * 0.4;
+
+    // Create mask and apply morphological close
     const mask = new Uint8Array(W * H);
-    for (let i = 0; i < W*H; i++) {
-      mask[i] = gray[i] > threshold ? 1 : 0;
-    }
+    for (let i = 0; i < W * H; i++) mask[i] = score[i] > thresh ? 1 : 0;
 
-    // 5. Apply morphological closing (dilate then erode) to fill gaps
-    // Simple 5x5 box
-    const dilated = new Uint8Array(W * H);
-    const rad = 3;
-    for (let y = rad; y < H-rad; y++) {
-      for (let x = rad; x < W-rad; x++) {
+    // Dilate(2) then erode(1)
+    const temp = new Uint8Array(W * H);
+    for (let y = 2; y < H-2; y++) {
+      for (let x = 2; x < W-2; x++) {
         let found = 0;
-        for (let dy = -rad; dy <= rad; dy++) {
-          for (let dx = -rad; dx <= rad; dx++) {
-            if (mask[(y+dy)*W+(x+dx)]) { found = 1; break; }
-          }
-          if (found) break;
-        }
-        dilated[y*W+x] = found;
+        for (let dy = -2; dy <= 2 && !found; dy++)
+          for (let dx = -2; dx <= 2 && !found; dx++)
+            if (mask[(y+dy)*W+(x+dx)]) found = 1;
+        temp[y*W+x] = found;
       }
     }
-    const closed = new Uint8Array(W * H);
-    for (let y = rad; y < H-rad; y++) {
-      for (let x = rad; x < W-rad; x++) {
-        let allSet = 1;
-        for (let dy = -1; dy <= 1; dy++) {
-          for (let dx = -1; dx <= 1; dx++) {
-            if (!dilated[(y+dy)*W+(x+dx)]) { allSet = 0; break; }
-          }
-          if (!allSet) break;
-        }
-        closed[y*W+x] = allSet;
+    const final2 = new Uint8Array(W * H);
+    for (let y = 1; y < H-1; y++) {
+      for (let x = 1; x < W-1; x++) {
+        let all = 1;
+        for (let dy = -1; dy <= 1 && all; dy++)
+          for (let dx = -1; dx <= 1 && all; dx++)
+            if (!temp[(y+dy)*W+(x+dx)]) all = 0;
+        final2[y*W+x] = all;
       }
     }
 
-    // 6. Count bright pixels per row and column
-    const rowCount = new Float32Array(H);
-    const colCount = new Float32Array(W);
-    for (let y = 0; y < H; y++) {
-      for (let x = 0; x < W; x++) {
-        if (closed[y*W+x]) {
-          rowCount[y]++;
-          colCount[x]++;
-        }
-      }
-    }
+    // Count paper pixels per row and column
+    const rowP = new Float32Array(H);
+    const colP = new Float32Array(W);
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++)
+        if (final2[y*W+x]) { rowP[y]++; colP[x]++; }
 
-    // 7. Find bounding box: rows/cols where >20% of pixels are bright (paper)
-    const rowThresh = W * 0.15;
-    const colThresh = H * 0.15;
+    // Find bounding box
+    const rT = W * 0.12, cT = H * 0.12;
     let top = 0, bottom = H-1, left = 0, right = W-1;
-    const pad = Math.floor(Math.min(W, H) * 0.01);
+    for (let y = 0; y < H; y++) if (rowP[y] > rT) { top = y; break; }
+    for (let y = H-1; y >= 0; y--) if (rowP[y] > rT) { bottom = y; break; }
+    for (let x = 0; x < W; x++) if (colP[x] > cT) { left = x; break; }
+    for (let x = W-1; x >= 0; x--) if (colP[x] > cT) { right = x; break; }
 
-    for (let y = 0; y < H; y++) {
-      if (rowCount[y] > rowThresh) { top = Math.max(0, y - pad); break; }
-    }
-    for (let y = H-1; y >= 0; y--) {
-      if (rowCount[y] > rowThresh) { bottom = Math.min(H-1, y + pad); break; }
-    }
-    for (let x = 0; x < W; x++) {
-      if (colCount[x] > colThresh) { left = Math.max(0, x - pad); break; }
-    }
-    for (let x = W-1; x >= 0; x--) {
-      if (colCount[x] > colThresh) { right = Math.min(W-1, x + pad); break; }
-    }
+    const pad = Math.floor(Math.min(W, H) * 0.005);
+    top = Math.max(0, top - pad); bottom = Math.min(H-1, bottom + pad);
+    left = Math.max(0, left - pad); right = Math.min(W-1, right + pad);
 
-    const foundW = right - left;
-    const foundH = bottom - top;
-
-    if (foundW > W * 0.2 && foundH > H * 0.2 && (foundW < W * 0.95 || foundH < H * 0.95)) {
-      cropRect = {
-        x: (left / W) * 100,
-        y: (top / H) * 100,
-        w: (foundW / W) * 100,
-        h: (foundH / H) * 100
-      };
+    const fW = right - left, fH = bottom - top;
+    if (fW > W * 0.2 && fH > H * 0.2 && (fW < W * 0.95 || fH < H * 0.95)) {
+      cropRect = { x:(left/W)*100, y:(top/H)*100, w:(fW/W)*100, h:(fH/H)*100 };
     } else {
       cropRect = { x: 2, y: 2, w: 96, h: 96 };
     }
