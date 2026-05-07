@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Bäumer Docs">
+<link rel="manifest" href="manifest.json">
 <title>Bäumer Docs</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;1,300;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -1502,6 +1503,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- TESSERACT -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <script>
 // ===== CONFIG =====
@@ -1540,8 +1542,41 @@ async function init() {
   if (session) {
     currentUser = session.user;
     await loadUserWorkspace();
+    // Check if app was opened via Share Sheet (after login is ready)
+    await handleShareTarget();
   } else {
     document.getElementById('auth-screen').style.display = 'flex';
+  }
+}
+
+async function handleShareTarget() {
+  // Web Share Target sends files via POST to /?share-target
+  // We store the file in sessionStorage before redirect, then pick it up here
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has('share-target')) return;
+
+  // Clean URL so back-navigation doesn't re-trigger
+  window.history.replaceState({}, '', window.location.pathname);
+
+  // Retrieve file from cache (stored by service worker or via formData)
+  try {
+    const cache = await caches.open('share-target-cache');
+    const req = await cache.match('/share-file');
+    if (!req) return;
+    const blob = await req.blob();
+    await cache.delete('/share-file');
+
+    showToast('Dokument wird geladen…');
+    // Switch to scan tab first
+    switchTab('scan');
+
+    // Small delay to let the tab render
+    setTimeout(async () => {
+      const file = new File([blob], 'shared-document', { type: blob.type });
+      await handleFile(file);
+    }, 300);
+  } catch (e) {
+    console.error('Share target error:', e);
   }
 }
 
@@ -2146,6 +2181,30 @@ function triggerUpload() {
 document.getElementById('camera-input').addEventListener('change', e => handleFile(e.target.files[0]));
 document.getElementById('file-input').addEventListener('change', e => handleFile(e.target.files[0]));
 
+async function pdfToImageDataUrl(file) {
+  // Render first page of PDF to a canvas, iOS-safe max size
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  const arrayBuffer = await file.arrayBuffer();
+  const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const page = await pdfDoc.getPage(1);
+
+  // Scale to max 2048px wide (iOS canvas limit)
+  const viewport = page.getViewport({ scale: 1 });
+  const maxDim = 2048;
+  const scale = Math.min(maxDim / viewport.width, maxDim / viewport.height, 2);
+  const scaledViewport = page.getViewport({ scale });
+
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.floor(scaledViewport.width);
+  canvas.height = Math.floor(scaledViewport.height);
+  const ctx = canvas.getContext('2d');
+
+  await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
+  return canvas.toDataURL('image/jpeg', 0.92);
+}
+
 async function handleFile(file) {
   if (!file) return;
 
@@ -2159,6 +2218,26 @@ async function handleFile(file) {
   document.getElementById('form-date').value = '';
   renderScanTypePills();
   renderTagChips();
+
+  // PDFs: render to image first, then continue like a normal image
+  if (file.type === 'application/pdf') {
+    try {
+      const imageDataUrl = await pdfToImageDataUrl(file);
+      initCrop(imageDataUrl, async (croppedDataUrl) => {
+        currentImageDataUrl = croppedDataUrl;
+        document.getElementById('preview-img').src = croppedDataUrl;
+        document.getElementById('preview-img-wrap').style.display = 'flex';
+        const res = await fetch(croppedDataUrl);
+        const blob = await res.blob();
+        await runOCR(blob);
+        openSheet('scan-sheet');
+      });
+    } catch (err) {
+      console.error('PDF render error:', err);
+      alert('PDF konnte nicht geladen werden. Bitte versuche es erneut.');
+    }
+    return;
+  }
 
   // Read file then show crop editor first
   const reader = new FileReader();
@@ -2778,6 +2857,11 @@ function addManagedTag() {
 }
 
 // ===== START =====
+// Register Service Worker for Share Target
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(e => console.error('SW register failed:', e));
+}
+
 init();
 </script>
 </body>
