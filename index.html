@@ -1140,6 +1140,147 @@
     background: rgba(242,204,143,0.2);
     color: #B8860B;
   }
+
+  /* ===== PAGES ROW (Multi-Page Scan) ===== */
+  .pages-row {
+    display: flex;
+    gap: 8px;
+    padding: 14px 20px 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .pages-row::-webkit-scrollbar { display: none; }
+
+  .page-thumb {
+    position: relative;
+    flex: 0 0 96px;
+    height: 120px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--border);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: transform 0.12s;
+  }
+  .page-thumb:active { transform: scale(0.96); }
+  .page-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+  }
+  .page-thumb .page-num {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    background: rgba(45,37,32,0.78);
+    color: var(--bg);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .page-thumb .page-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 22px; height: 22px;
+    background: rgba(45,37,32,0.78);
+    color: var(--bg);
+    border: none;
+    border-radius: 50%;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .page-add {
+    flex: 0 0 96px;
+    height: 120px;
+    border-radius: 10px;
+    border: 1.5px dashed var(--muted);
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .page-add:active { border-color: var(--accent); color: var(--accent); }
+  .page-add svg { width: 22px; height: 22px; stroke-width: 1.8; }
+
+  /* ===== OCR CANCEL ===== */
+  .ocr-cancel-btn {
+    margin-top: 14px;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    color: var(--muted);
+    border-radius: 10px;
+    padding: 10px 22px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .ocr-cancel-btn:active { border-color: var(--accent); color: var(--accent); }
+
+  /* ===== DETAIL PAGES ROW ===== */
+  .detail-pages-row {
+    display: flex;
+    gap: 8px;
+    padding: 0 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-bottom: 8px;
+  }
+  .detail-pages-row::-webkit-scrollbar { display: none; }
+  .detail-pages-row img {
+    flex: 0 0 auto;
+    max-height: 280px;
+    border-radius: 8px;
+    cursor: pointer;
+    background: var(--bg);
+  }
+
+  /* Crop-Sheet immer über anderen Sheets (re-crop aus Detail- oder Scan-Sheet) */
+  #crop-sheet { z-index: 250; }
+
+  /* ===== LIGHTBOX EDIT BUTTON ===== */
+  .lightbox-edit-btn {
+    position: fixed;
+    top: max(16px, env(safe-area-inset-top, 16px));
+    left: 16px;
+    z-index: 10001;
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: #fff;
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+  .lightbox-edit-btn:active { background: rgba(255,255,255,0.25); }
+
+  .pages-hint {
+    font-size: 11px;
+    color: var(--muted);
+    padding: 0 20px 4px;
+    margin-top: -2px;
+  }
 </style>
 </head>
 <body>
@@ -1281,14 +1422,10 @@
         <div class="settings-label">KI-Analyse</div>
         <div class="settings-row" style="cursor:default">
           <div>
-            <div class="ai-label">🤖 Anthropic API</div>
-            <div class="ai-sublabel">Noch kein API Key eingerichtet</div>
+            <div class="ai-label">🤖 Claude Vision OCR</div>
+            <div class="ai-sublabel">Läuft über Supabase Edge Function · API Key sicher auf dem Server</div>
           </div>
-          <span style="font-size:11px;color:var(--muted)">Deaktiviert</span>
-        </div>
-        <div class="settings-row" onclick="showApiKeyInput()">
-          <span>API Key eingeben</span>
-          <span style="color:var(--muted)">›</span>
+          <span style="font-size:11px;color:var(--green)">Aktiv</span>
         </div>
       </div>
 
@@ -1349,10 +1486,11 @@
     <div id="crop-step-edit">
       <div class="sheet-header">
         <div class="sheet-title">Zuschneiden</div>
-        <button class="sheet-close" onclick="skipCrop()">Überspringen</button>
+        <button class="sheet-close" onclick="cancelCrop()">✕</button>
       </div>
-      <div style="padding:12px 20px 0;font-size:12px;color:var(--muted)">
-        Ziehe die Ecken um den Bereich anzupassen
+      <div style="padding:12px 20px 0;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;align-items:center">
+        <span>Ziehe die Ecken um den Bereich anzupassen</span>
+        <span id="crop-ai-status" style="display:none;font-size:11px;color:var(--accent)">✨ KI verfeinert…</span>
       </div>
       <div style="margin:12px 20px 0;border-radius:12px;overflow:hidden">
         <div class="crop-wrap" id="crop-wrap">
@@ -1402,20 +1540,20 @@
   <div class="ocr-spinner"></div>
   <div class="ocr-label" id="ocr-label">Text wird erkannt...</div>
   <div class="ocr-progress-bar"><div class="ocr-progress-fill" id="ocr-progress"></div></div>
+  <button class="ocr-cancel-btn" onclick="cancelOcr()">Abbrechen</button>
 </div>
 
 <!-- SCAN SHEET -->
 <div class="sheet" id="scan-sheet">
-  <div class="sheet-backdrop" onclick="closeSheet('scan-sheet')"></div>
+  <div class="sheet-backdrop" onclick="cancelScan()"></div>
   <div class="sheet-content">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
       <div class="sheet-title">Dokument speichern</div>
-      <button class="sheet-close" onclick="closeSheet('scan-sheet')">✕</button>
+      <button class="sheet-close" onclick="cancelScan()">✕</button>
     </div>
-    <div class="preview-img-wrap" id="preview-img-wrap">
-      <img id="preview-img" src="" alt="Vorschau">
-    </div>
+    <div class="pages-row" id="pages-row"></div>
+    <div class="pages-hint" id="pages-hint" style="display:none">Tippe auf eine Seite zum Ansehen oder Zuschneiden</div>
     <div class="form-body">
       <div class="form-group">
         <label class="form-label">Titel</label>
@@ -1452,11 +1590,10 @@
         <label class="form-label">KI-Analyse</label>
         <div class="ai-row">
           <div>
-            <div class="ai-label">🤖 Automatisch ausfüllen</div>
-            <div class="ai-sublabel">API Key nicht eingerichtet</div>
+            <div class="ai-label">🤖 Claude Vision OCR</div>
+            <div class="ai-sublabel" id="ocr-status-sub">Analysiert Dokument automatisch</div>
           </div>
-          <button class="toggle" id="ai-toggle" onclick="toggleAI()" title="Kein API Key">
-          </button>
+          <span id="ocr-status-icon" style="font-size:18px;color:var(--green)"></span>
         </div>
       </div>
       <button class="save-btn" id="save-btn" onclick="saveDocument()">Speichern</button>
@@ -1473,24 +1610,6 @@
   </div>
 </div>
 
-<!-- API KEY SHEET -->
-<div class="sheet" id="apikey-sheet">
-  <div class="sheet-backdrop" onclick="closeSheet('apikey-sheet')"></div>
-  <div class="sheet-content">
-    <div class="sheet-handle"></div>
-    <div class="sheet-header">
-      <div class="sheet-title">API Key eingeben</div>
-      <button class="sheet-close" onclick="closeSheet('apikey-sheet')">✕</button>
-    </div>
-    <div class="form-body" style="margin-top:16px">
-      <p style="font-size:12px;color:var(--muted);line-height:1.7">
-        Den API Key findest du unter <strong style="color:var(--text)">console.anthropic.com → API Keys</strong>. Er beginnt mit <code style="background:var(--border);padding:2px 5px;border-radius:4px">sk-ant-</code>
-      </p>
-      <input class="form-input" id="apikey-input" type="password" placeholder="sk-ant-...">
-      <button class="save-btn" onclick="saveApiKey()">Speichern</button>
-    </div>
-  </div>
-</div>
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
@@ -1498,17 +1617,22 @@
 <!-- FILE INPUTS -->
 <input type="file" id="camera-input" accept="image/*" capture="environment">
 <input type="file" id="file-input" accept="image/*,application/pdf">
+<input type="file" id="add-page-camera-input" accept="image/*" capture="environment">
+<input type="file" id="add-page-file-input" accept="image/*,application/pdf">
 
 <!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- TESSERACT -->
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
 <script>
 // ===== CONFIG =====
 const SUPABASE_URL = 'https://jfbmawrthozhtggxlknb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmYm1hd3J0aG96aHRnZ3hsa25iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjk4MzAsImV4cCI6MjA5MTkwNTgzMH0.z8s_MHNhYveCXBlZCma7esJJszRR9Ep2Co0Lr8q6oFU';
+
+const IS_LOCAL_DEV = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+const API_BASE = IS_LOCAL_DEV ? location.origin : SUPABASE_URL;
+const CLAUDE_PROXY_URL = `${API_BASE}/functions/v1/claude-proxy`;
+const CLAUDE_EDGES_URL = `${API_BASE}/functions/v1/claude-detect-edges`;
 
 const DEFAULT_TAGS = ['Steuer','Versicherung','Wohnung','Auto','Energie','Arzt/Gesundheit','Schule/Kita'];
 
@@ -1521,9 +1645,10 @@ let documents = [];
 let activeFilter = 'all';
 let selectedTags = [];
 let selectedType = 'Rechnung';
-let currentImageDataUrl = null;
+let currentPages = []; // [{ dataUrl: string }, ...]
 let currentOcrText = '';
-let aiEnabled = false;
+let currentAiData = null;
+let currentOcrController = null;
 let authMode = 'login';
 let inviteWorkspaceId = null;
 
@@ -1542,10 +1667,46 @@ async function init() {
   if (session) {
     currentUser = session.user;
     await loadUserWorkspace();
-    // Check if app was opened via Share Sheet (after login is ready)
     await handleShareTarget();
   } else {
-    document.getElementById('auth-screen').style.display = 'flex';
+    const autoLoggedIn = await tryDevAutoLogin();
+    if (!autoLoggedIn) {
+      document.getElementById('auth-screen').style.display = 'flex';
+    }
+  }
+}
+
+async function tryDevAutoLogin() {
+  console.log('[dev] Auto-Login Check startet, IS_LOCAL_DEV =', IS_LOCAL_DEV, 'hostname =', location.hostname);
+  if (!IS_LOCAL_DEV) return false;
+  try {
+    const res = await fetch('/dev-config.json');
+    console.log('[dev] /dev-config.json Status:', res.status);
+    if (!res.ok) {
+      console.warn('[dev] /dev-config.json nicht erreichbar (HTTP ' + res.status + ')');
+      return false;
+    }
+    const cfg = await res.json();
+    console.log('[dev] config:', cfg.devAuth ? cfg.devAuth.email : '(keine devAuth)');
+    if (!cfg.devAuth?.email || !cfg.devAuth?.password) {
+      console.warn('[dev] DEV_AUTH_EMAIL / DEV_AUTH_PASSWORD in .env leer');
+      return false;
+    }
+    const { data, error } = await sb.auth.signInWithPassword({
+      email: cfg.devAuth.email,
+      password: cfg.devAuth.password,
+    });
+    if (error) {
+      console.warn('[dev] Auto-Login fehlgeschlagen:', error.message);
+      return false;
+    }
+    currentUser = data.user;
+    console.log('[dev] Auto-Login erfolgreich als', cfg.devAuth.email);
+    await loadUserWorkspace();
+    return true;
+  } catch (e) {
+    console.warn('[dev] Auto-Login-Check fehlgeschlagen:', e?.message || e);
+    return false;
   }
 }
 
@@ -1685,12 +1846,6 @@ async function showApp() {
   document.getElementById('settings-user-name').textContent = currentUserName;
   document.getElementById('settings-user-email').textContent = currentUser.email;
 
-  // Load API key from localStorage
-  const savedKey = localStorage.getItem('anthropic_key');
-  if (savedKey) {
-    aiEnabled = false; // Don't auto-enable, user decides per doc
-  }
-
   await loadDocuments();
   subscribeRealtime();
   renderTagChips();
@@ -1813,8 +1968,18 @@ function showDetail(id) {
                new Date(doc.created_at).toLocaleDateString('de-DE',{day:'2-digit',month:'long',year:'numeric'});
   const tags = (doc.tags||[]).map(t=>`<span class="doc-tag" style="font-size:12px;padding:4px 10px">${esc(t)}</span>`).join('');
 
+  const pageUrls = (Array.isArray(doc.image_urls) && doc.image_urls.length > 0)
+    ? doc.image_urls
+    : (doc.image_url ? [doc.image_url] : []);
+  const imagesHtml = pageUrls.length > 1
+    ? `<div class="detail-pages-row">${pageUrls.map((u, idx) => `<img src="${u}" alt="Seite ${idx + 1}" onclick="openSavedPageViewer('${doc.id}', ${idx})">`).join('')}</div>
+       <div style="padding:0 20px 8px;font-size:11px;color:var(--muted)">${pageUrls.length} Seiten — tippe zum Ansehen oder Zuschneiden</div>`
+    : (pageUrls.length === 1
+        ? `<img class="detail-img" src="${pageUrls[0]}" alt="Dokument" onclick="openSavedPageViewer('${doc.id}', 0)">`
+        : '');
+
   document.getElementById('detail-inner').innerHTML = `
-    ${doc.image_url ? `<img class="detail-img" src="${doc.image_url}" alt="Dokument" onclick="openLightbox('${doc.image_url}')">` : ''}
+    ${imagesHtml}
     <!-- View mode -->
     <div id="detail-view-mode">
       <div class="detail-section">
@@ -2008,13 +2173,26 @@ let lbScale = 1, lbMinScale = 1, lbX = 0, lbY = 0;
 let lbStartDist = 0, lbStartScale = 1;
 let lbStartX = 0, lbStartY = 0, lbPanStartX = 0, lbPanStartY = 0;
 let lbIsPanning = false, lbHint = null;
+let lbOnEdit = null;
 
-function openLightbox(url) {
+function triggerLightboxEdit() {
+  const fn = lbOnEdit;
+  closeLightbox();
+  if (typeof fn === 'function') setTimeout(fn, 260);
+}
+
+function openLightbox(url, opts = {}) {
+  lbOnEdit = (opts && opts.editable && typeof opts.onEdit === 'function') ? opts.onEdit : null;
+
   // Create overlay
   lbOverlay = document.createElement('div');
   lbOverlay.className = 'lightbox-overlay';
+  const editBtn = lbOnEdit
+    ? `<button class="lightbox-edit-btn" onclick="triggerLightboxEdit()">✂︎ Zuschneiden</button>`
+    : '';
   lbOverlay.innerHTML = `
     <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    ${editBtn}
     <img class="lightbox-img" src="${url}" alt="Dokument">
     <div class="lightbox-hint">Zwei Finger zum Zoomen</div>
   `;
@@ -2041,6 +2219,7 @@ function openLightbox(url) {
   let lastTap = 0;
   lbOverlay.addEventListener('click', (e) => {
     if (e.target.classList.contains('lightbox-close')) return;
+    if (e.target.classList.contains('lightbox-edit-btn') || e.target.closest?.('.lightbox-edit-btn')) return;
     const now = Date.now();
     if (now - lastTap < 300) {
       // Double tap
@@ -2067,11 +2246,13 @@ function openLightbox(url) {
 function closeLightbox() {
   if (!lbOverlay) return;
   lbOverlay.classList.remove('active');
+  const ov = lbOverlay;
+  lbOverlay = null;
   setTimeout(() => {
-    lbOverlay.remove();
-    lbOverlay = null;
+    ov.remove();
     document.body.style.overflow = '';
   }, 250);
+  lbOnEdit = null;
 }
 
 function applyLbTransform(img) {
@@ -2177,139 +2358,333 @@ function triggerCamera() {
 function triggerUpload() {
   document.getElementById('file-input').click();
 }
+function triggerAddPageCamera() {
+  document.getElementById('add-page-camera-input').click();
+}
+function triggerAddPageUpload() {
+  document.getElementById('add-page-file-input').click();
+}
 
 document.getElementById('camera-input').addEventListener('change', e => handleFile(e.target.files[0]));
 document.getElementById('file-input').addEventListener('change', e => handleFile(e.target.files[0]));
+document.getElementById('add-page-camera-input').addEventListener('change', e => handleFile(e.target.files[0], { addPage: true }));
+document.getElementById('add-page-file-input').addEventListener('change', e => handleFile(e.target.files[0], { addPage: true }));
 
-async function pdfToImageDataUrl(file) {
-  // Render first page of PDF to a canvas, iOS-safe max size
+async function pdfToImages(file) {
   pdfjsLib.GlobalWorkerOptions.workerSrc =
     'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
   const arrayBuffer = await file.arrayBuffer();
   const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  const page = await pdfDoc.getPage(1);
-
-  // Scale to max 2048px wide (iOS canvas limit)
-  const viewport = page.getViewport({ scale: 1 });
+  const pageCount = pdfDoc.numPages;
   const maxDim = 2048;
-  const scale = Math.min(maxDim / viewport.width, maxDim / viewport.height, 2);
-  const scaledViewport = page.getViewport({ scale });
+  const out = [];
 
-  const canvas = document.createElement('canvas');
-  canvas.width = Math.floor(scaledViewport.width);
-  canvas.height = Math.floor(scaledViewport.height);
-  const ctx = canvas.getContext('2d');
-
-  await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
-  return canvas.toDataURL('image/jpeg', 0.92);
+  for (let i = 1; i <= pageCount; i++) {
+    const page = await pdfDoc.getPage(i);
+    const viewport = page.getViewport({ scale: 1 });
+    const scale = Math.min(maxDim / viewport.width, maxDim / viewport.height, 2);
+    const scaledViewport = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.floor(scaledViewport.width);
+    canvas.height = Math.floor(scaledViewport.height);
+    const ctx = canvas.getContext('2d');
+    await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
+    out.push(canvas.toDataURL('image/jpeg', 0.92));
+  }
+  return out;
 }
 
-async function handleFile(file) {
-  if (!file) return;
-
-  // Reset form
+function resetScanForm() {
   selectedTags = [];
   const activeTypes = getActiveDocTypes();
   selectedType = activeTypes[0] || 'Rechnung';
   currentOcrText = '';
+  currentAiData = null;
+  currentPages = [];
   document.getElementById('form-title').value = '';
   document.getElementById('form-amount').value = '';
   document.getElementById('form-date').value = '';
   renderScanTypePills();
   renderTagChips();
+  renderPagesRow();
+}
 
-  // PDFs: render to image first, then continue like a normal image
+async function handleFile(file, opts = {}) {
+  if (!file) return;
+  const addPage = !!opts.addPage;
+  if (!addPage) resetScanForm();
+
   if (file.type === 'application/pdf') {
     try {
-      const imageDataUrl = await pdfToImageDataUrl(file);
-      initCrop(imageDataUrl, async (croppedDataUrl) => {
-        currentImageDataUrl = croppedDataUrl;
-        document.getElementById('preview-img').src = croppedDataUrl;
-        document.getElementById('preview-img-wrap').style.display = 'flex';
-        const res = await fetch(croppedDataUrl);
-        const blob = await res.blob();
-        await runOCR(blob);
-        openSheet('scan-sheet');
-      });
+      const overlay = document.getElementById('ocr-overlay');
+      const label = document.getElementById('ocr-label');
+      label.textContent = 'PDF wird gerendert...';
+      overlay.classList.add('visible');
+      const pages = await pdfToImages(file);
+      overlay.classList.remove('visible');
+      pages.forEach(dataUrl => currentPages.push({ dataUrl }));
+      renderPagesRow();
+      if (!addPage) openSheet('scan-sheet');
+      await runOCR();
     } catch (err) {
+      document.getElementById('ocr-overlay').classList.remove('visible');
       console.error('PDF render error:', err);
       alert('PDF konnte nicht geladen werden. Bitte versuche es erneut.');
     }
     return;
   }
 
-  // Read file then show crop editor first
   const reader = new FileReader();
   reader.onload = async e => {
     const originalDataUrl = e.target.result;
-    // Show crop editor — after crop, run OCR on cropped image
     initCrop(originalDataUrl, async (croppedDataUrl) => {
-      currentImageDataUrl = croppedDataUrl;
-      document.getElementById('preview-img').src = croppedDataUrl;
-      document.getElementById('preview-img-wrap').style.display = 'flex';
-      // Convert cropped dataUrl back to blob for OCR
-      const res = await fetch(croppedDataUrl);
-      const blob = await res.blob();
-      await runOCR(blob);
-      openSheet('scan-sheet');
+      currentPages.push({ dataUrl: croppedDataUrl });
+      renderPagesRow();
+      if (!addPage) openSheet('scan-sheet');
+      await runOCR();
     });
   };
   reader.readAsDataURL(file);
 }
 
-async function runOCR(file) {
+function renderPagesRow() {
+  const row = document.getElementById('pages-row');
+  if (!row) return;
+  const thumbs = currentPages.map((p, i) => `
+    <div class="page-thumb" onclick="openPageViewer(${i})">
+      <img src="${p.dataUrl}" alt="Seite ${i + 1}">
+      <span class="page-num">${i + 1}</span>
+      <button class="page-remove" onclick="event.stopPropagation(); removePage(${i})" aria-label="Seite entfernen">×</button>
+    </div>
+  `).join('');
+  row.innerHTML = thumbs + `
+    <button class="page-add" onclick="triggerAddPageCamera()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Seite<br>hinzufügen
+    </button>
+  `;
+  const hint = document.getElementById('pages-hint');
+  if (hint) hint.style.display = currentPages.length > 0 ? 'block' : 'none';
+}
+
+async function removePage(idx) {
+  if (idx < 0 || idx >= currentPages.length) return;
+  currentPages.splice(idx, 1);
+  renderPagesRow();
+  if (currentPages.length === 0) {
+    cancelScan();
+    return;
+  }
+  await runOCR();
+}
+
+function openPageViewer(idx) {
+  const page = currentPages[idx];
+  if (!page) return;
+  openLightbox(page.dataUrl, {
+    editable: true,
+    onEdit: () => recropScanPage(idx),
+  });
+}
+
+function recropScanPage(idx) {
+  if (idx < 0 || idx >= currentPages.length) return;
+  const dataUrl = currentPages[idx].dataUrl;
+  initCrop(dataUrl, async (croppedDataUrl) => {
+    currentPages[idx].dataUrl = croppedDataUrl;
+    renderPagesRow();
+    await runOCR();
+  });
+}
+
+function openSavedPageViewer(docId, pageIdx) {
+  const doc = documents.find(d => d.id === docId);
+  if (!doc) return;
+  const urls = (Array.isArray(doc.image_urls) && doc.image_urls.length)
+    ? doc.image_urls
+    : (doc.image_url ? [doc.image_url] : []);
+  const url = urls[pageIdx];
+  if (!url) return;
+  openLightbox(url, {
+    editable: true,
+    onEdit: () => recropSavedPage(docId, pageIdx, url),
+  });
+}
+
+async function recropSavedPage(docId, pageIdx, url) {
+  try {
+    showToast('Bild wird geladen…');
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const blob = await res.blob();
+    const dataUrl = await new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+    initCrop(dataUrl, async (croppedDataUrl) => {
+      await replaceSavedPage(docId, pageIdx, croppedDataUrl);
+    });
+  } catch (e) {
+    console.error('Re-Crop Load Fehler:', e);
+    showToast('Bild konnte nicht geladen werden');
+  }
+}
+
+async function replaceSavedPage(docId, pageIdx, croppedDataUrl) {
+  const doc = documents.find(d => d.id === docId);
+  if (!doc) return;
+  showToast('Seite wird aktualisiert…');
+  try {
+    const blob = dataUrlToBlob(croppedDataUrl);
+    const fileName = `${currentWorkspaceId}/${Date.now()}-r${pageIdx + 1}.jpg`;
+    const { error: upErr } = await sb.storage.from('documents').upload(fileName, blob, { contentType: 'image/jpeg' });
+    if (upErr) throw upErr;
+    const { data: signed, error: signErr } = await sb.storage.from('documents').createSignedUrl(fileName, 60 * 60 * 24 * 365 * 10);
+    if (signErr) throw signErr;
+    const newUrl = signed?.signedUrl;
+    if (!newUrl) throw new Error('Signed URL fehlgeschlagen');
+
+    const urls = (Array.isArray(doc.image_urls) && doc.image_urls.length)
+      ? [...doc.image_urls]
+      : (doc.image_url ? [doc.image_url] : []);
+    urls[pageIdx] = newUrl;
+
+    const update = { image_urls: urls };
+    if (pageIdx === 0) update.image_url = newUrl;
+    const { error } = await sb.from('documents').update(update).eq('id', docId);
+    if (error) throw error;
+
+    doc.image_urls = urls;
+    if (pageIdx === 0) doc.image_url = newUrl;
+    showDetail(docId);
+    showToast('✓ Seite aktualisiert');
+  } catch (e) {
+    console.error('Replace saved page error:', e);
+    showToast('Fehler: ' + (e.message || ''));
+  }
+}
+
+function cancelOcr() {
+  if (currentOcrController) {
+    currentOcrController.abort();
+    currentOcrController = null;
+  }
+  const overlay = document.getElementById('ocr-overlay');
+  overlay.classList.remove('visible');
+  document.getElementById('ocr-progress').style.width = '0%';
+}
+
+function cancelCrop() {
+  closeSheet('crop-sheet');
+  document.getElementById('crop-step-preview').style.display = 'none';
+  document.getElementById('crop-step-edit').style.display = 'block';
+  cropCallback = null;
+  document.getElementById('camera-input').value = '';
+  document.getElementById('file-input').value = '';
+  document.getElementById('add-page-camera-input').value = '';
+  document.getElementById('add-page-file-input').value = '';
+  // If no pages yet, full reset; otherwise stay in scan-sheet
+  if (currentPages.length === 0) {
+    closeSheet('scan-sheet');
+  }
+}
+
+function cancelScan() {
+  cancelOcr();
+  closeSheet('crop-sheet');
+  closeSheet('scan-sheet');
+  document.getElementById('crop-step-preview').style.display = 'none';
+  document.getElementById('crop-step-edit').style.display = 'block';
+  cropCallback = null;
+  currentPages = [];
+  currentOcrText = '';
+  currentAiData = null;
+  document.getElementById('camera-input').value = '';
+  document.getElementById('file-input').value = '';
+  document.getElementById('add-page-camera-input').value = '';
+  document.getElementById('add-page-file-input').value = '';
+  renderPagesRow();
+}
+
+async function runOCR() {
+  if (currentPages.length === 0) return;
+
+  if (currentOcrController) currentOcrController.abort();
+  currentOcrController = new AbortController();
+  const signal = currentOcrController.signal;
+
   const overlay = document.getElementById('ocr-overlay');
   const label = document.getElementById('ocr-label');
   const progress = document.getElementById('ocr-progress');
   overlay.classList.add('visible');
+  label.textContent = currentPages.length > 1
+    ? `Claude analysiert ${currentPages.length} Seiten...`
+    : 'Claude analysiert Dokument...';
+  progress.style.width = '25%';
 
   try {
-    const result = await Tesseract.recognize(file, 'deu', {
-      logger: m => {
-        if (m.status === 'recognizing text') {
-          const pct = Math.round(m.progress * 100);
-          progress.style.width = pct + '%';
-          label.textContent = `Text wird erkannt... ${pct}%`;
-        }
-      }
+    const imagesBase64 = currentPages.map(p => {
+      const comma = p.dataUrl.indexOf(',');
+      return p.dataUrl.substring(comma + 1);
     });
-    currentOcrText = result.data.text;
+    progress.style.width = '45%';
 
-    // Auto-fill title from first meaningful line
-    const lines = currentOcrText.split('\n').map(l=>l.trim()).filter(l=>l.length > 3);
-    if (lines.length > 0 && !document.getElementById('form-title').value) {
-      document.getElementById('form-title').value = lines[0].slice(0, 60);
+    const { data: { session } } = await sb.auth.getSession();
+    const headers = { 'Content-Type': 'application/json' };
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+      headers['apikey'] = SUPABASE_KEY;
     }
+    const res = await fetch(CLAUDE_PROXY_URL, {
+      method: 'POST',
+      headers,
+      signal,
+      body: JSON.stringify({ imagesBase64, mediaType: 'image/jpeg' })
+    });
 
-    // Try to find a date
-    const dateMatch = currentOcrText.match(/(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{2,4})/);
-    if (dateMatch && !document.getElementById('form-date').value) {
-      try {
-        const [_, d, m, y] = dateMatch;
-        const year = y.length === 2 ? '20' + y : y;
-        document.getElementById('form-date').value = `${year}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
-      } catch(e) {}
+    if (signal.aborted) return;
+    progress.style.width = '85%';
+    const data = await res.json();
+    const raw = data.content?.[0]?.text || '';
+    const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+
+    currentAiData = parsed;
+    currentOcrText = parsed.text || '';
+
+    const statusSub = document.getElementById('ocr-status-sub');
+    const statusIcon = document.getElementById('ocr-status-icon');
+    if (statusSub) statusSub.textContent = currentPages.length > 1
+      ? `${currentPages.length} Seiten analysiert — Felder ausgefüllt`
+      : 'Felder automatisch ausgefüllt';
+    if (statusIcon) statusIcon.textContent = '✓';
+
+    if (parsed.titel) document.getElementById('form-title').value = parsed.titel;
+    if (parsed.datum) document.getElementById('form-date').value = parsed.datum;
+    if (parsed.betrag) document.getElementById('form-amount').value = parsed.betrag;
+    if (parsed.waehrung) document.getElementById('form-currency').value = parsed.waehrung;
+    if (parsed.typ) {
+      const activeTypesOcr = getActiveDocTypes();
+      if (activeTypesOcr.includes(parsed.typ)) selectType(parsed.typ);
     }
-
-    // Try to find amount
-    const amountMatch = currentOcrText.match(/(\d{1,4}[,\.]\d{2})\s*€?/);
-    if (amountMatch && !document.getElementById('form-amount').value) {
-      document.getElementById('form-amount').value = amountMatch[1].replace(',','.');
-    }
-
-    // Auto-detect type (only if type is active)
-    const lower = currentOcrText.toLowerCase();
-    const activeTypesOcr = getActiveDocTypes();
-    if ((lower.includes('rechnung') || lower.includes('invoice') || lower.includes('zahlung')) && activeTypesOcr.includes('Rechnung')) {
-      selectType('Rechnung');
-    } else if ((lower.includes('vertrag') || lower.includes('vereinbarung') || lower.includes('contract')) && activeTypesOcr.includes('Vertrag')) {
-      selectType('Vertrag');
+    if (parsed.tags?.length) {
+      parsed.tags.forEach(t => { if (!selectedTags.includes(t)) selectedTags.push(t); });
+      renderTagChips();
     }
 
   } catch(e) {
-    console.error('OCR error:', e);
+    if (e.name === 'AbortError') {
+      console.log('OCR abgebrochen');
+      return;
+    }
+    console.error('Claude OCR Fehler:', e);
+    currentAiData = null;
+    const statusSub = document.getElementById('ocr-status-sub');
+    if (statusSub) statusSub.textContent = 'Fehler — Felder bitte manuell ausfüllen';
   } finally {
+    if (currentOcrController?.signal === signal) currentOcrController = null;
     overlay.classList.remove('visible');
     progress.style.width = '0%';
   }
@@ -2361,73 +2736,62 @@ function addCustomTag() {
   renderTagChips();
 }
 
-function toggleAI() {
-  const key = localStorage.getItem('anthropic_key');
-  if (!key) {
-    showToast('Kein API Key — bitte in Einstellungen eingeben');
-    return;
-  }
-  aiEnabled = !aiEnabled;
-  document.getElementById('ai-toggle').classList.toggle('on', aiEnabled);
-}
-
 async function saveDocument() {
   const title = document.getElementById('form-title').value.trim();
   if (!title) { showToast('Bitte Titel eingeben'); return; }
+  if (currentPages.length === 0) { showToast('Mindestens eine Seite benötigt'); return; }
 
   const btn = document.getElementById('save-btn');
   btn.disabled = true;
-  btn.textContent = 'Wird gespeichert...';
+  btn.textContent = currentPages.length > 1 ? `Seite 1/${currentPages.length}...` : 'Wird gespeichert...';
 
   try {
-    let imageUrl = null;
-
-    // Upload image to Supabase Storage
-    if (currentImageDataUrl) {
-      const blob = dataUrlToBlob(currentImageDataUrl);
-      const fileName = `${currentWorkspaceId}/${Date.now()}.jpg`;
-      const { data: uploadData, error: uploadErr } = await sb.storage.from('documents').upload(fileName, blob, { contentType: 'image/jpeg' });
+    const imageUrls = [];
+    const ts = Date.now();
+    for (let i = 0; i < currentPages.length; i++) {
+      if (currentPages.length > 1) btn.textContent = `Seite ${i + 1}/${currentPages.length}...`;
+      const blob = dataUrlToBlob(currentPages[i].dataUrl);
+      const fileName = `${currentWorkspaceId}/${ts}-${i + 1}.jpg`;
+      const { error: uploadErr } = await sb.storage.from('documents').upload(fileName, blob, { contentType: 'image/jpeg' });
       if (uploadErr) {
         console.error('Upload Fehler:', uploadErr);
         showToast('Foto-Upload fehlgeschlagen: ' + uploadErr.message);
-      } else {
-        // Use signed URL (valid 10 years) since bucket is private
-        const { data: signedData, error: signErr } = await sb.storage.from('documents').createSignedUrl(fileName, 60 * 60 * 24 * 365 * 10);
-        if (signErr) { console.error('SignedURL Fehler:', signErr); }
-        imageUrl = signedData?.signedUrl || null;
+        continue;
       }
+      const { data: signedData, error: signErr } = await sb.storage.from('documents').createSignedUrl(fileName, 60 * 60 * 24 * 365 * 10);
+      if (signErr) { console.error('SignedURL Fehler:', signErr); continue; }
+      if (signedData?.signedUrl) imageUrls.push(signedData.signedUrl);
     }
 
-    // KI-Analyse (optional)
-    let aiData = null;
-    if (aiEnabled) {
-      aiData = await runAIAnalysis(currentOcrText);
-    }
+    btn.textContent = 'Wird gespeichert...';
 
     const doc = {
       workspace_id: currentWorkspaceId,
-      title: aiData?.titel || title,
-      type: aiData?.typ || selectedType,
-      tags: aiData?.tags || selectedTags,
+      title: title,
+      type: selectedType,
+      tags: selectedTags,
       ocr_text: currentOcrText,
       amount: parseFloat(document.getElementById('form-amount').value) || null,
       currency: document.getElementById('form-currency').value,
       document_date: document.getElementById('form-date').value || null,
-      image_url: imageUrl,
+      image_url: imageUrls[0] || null,
+      image_urls: imageUrls.length > 0 ? imageUrls : null,
       added_by: currentUser.id,
       added_by_name: currentUserName,
-      ai_analyzed: !!aiData
+      ai_analyzed: !!currentAiData
     };
 
     const { error } = await sb.from('documents').insert(doc);
     if (error) throw error;
 
     closeSheet('scan-sheet');
+    currentPages = [];
     switchTab('archive');
-    showToast('✓ Dokument gespeichert');
-    // Reset file inputs
+    showToast(imageUrls.length > 1 ? `✓ Dokument mit ${imageUrls.length} Seiten gespeichert` : '✓ Dokument gespeichert');
     document.getElementById('camera-input').value = '';
     document.getElementById('file-input').value = '';
+    document.getElementById('add-page-camera-input').value = '';
+    document.getElementById('add-page-file-input').value = '';
 
   } catch(e) {
     console.error(e);
@@ -2436,30 +2800,6 @@ async function saveDocument() {
     btn.disabled = false;
     btn.textContent = 'Speichern';
   }
-}
-
-async function runAIAnalysis(text) {
-  const key = localStorage.getItem('anthropic_key');
-  if (!key || !text) return null;
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 500,
-        system: `Du bist ein Dokumenten-Analyse-Assistent. Analysiere den OCR-Text und antworte NUR mit JSON:\n{"titel":"...","typ":"Rechnung"|"Vertrag"|"Allgemein","datum":"YYYY-MM-DD oder null","betrag":Zahl oder null,"waehrung":"EUR","tags":["tag1","tag2"]}`,
-        messages: [{ role: 'user', content: text.slice(0, 2000) }]
-      })
-    });
-    const data = await res.json();
-    const raw = data.content?.[0]?.text || '';
-    return JSON.parse(raw.replace(/```json|```/g,'').trim());
-  } catch(e) { return null; }
 }
 
 // ===== SETTINGS =====
@@ -2475,25 +2815,6 @@ function copyInviteLink() {
   navigator.clipboard.writeText(text).then(() => showToast('Link kopiert ✓'));
 }
 
-function showApiKeyInput() {
-  const existing = localStorage.getItem('anthropic_key') || '';
-  document.getElementById('apikey-input').value = existing;
-  openSheet('apikey-sheet');
-}
-
-function saveApiKey() {
-  const key = document.getElementById('apikey-input').value.trim();
-  if (key) {
-    localStorage.setItem('anthropic_key', key);
-    showToast('API Key gespeichert ✓');
-    // Update UI
-    document.querySelector('.ai-sublabel').textContent = 'Bereit';
-  } else {
-    localStorage.removeItem('anthropic_key');
-    showToast('API Key entfernt');
-  }
-  closeSheet('apikey-sheet');
-}
 
 // ===== NAV =====
 function switchTab(tab) {
@@ -2542,110 +2863,158 @@ function initCrop(dataUrl, callback) {
   cropCallback = callback;
   const img = document.getElementById('crop-img');
   img.src = dataUrl;
-  img.onload = () => {
-    // Auto-detect document edges using canvas
+  img.onload = async () => {
+    // Sofortige lokale Erkennung (Canvas-basiert) als Startwert
     autoDetectCrop(img);
     updateCropBox();
     openSheet('crop-sheet');
+
+    // Claude-basierte Verfeinerung im Hintergrund
+    const aiStatus = document.getElementById('crop-ai-status');
+    if (aiStatus) aiStatus.style.display = 'inline';
+    const aiRect = await claudeDetectEdges(img);
+    if (aiStatus) aiStatus.style.display = 'none';
+
+    if (aiRect && aiRect.confidence !== 'low') {
+      const box = document.getElementById('crop-box');
+      if (box) box.style.transition = 'left 0.3s, top 0.3s, width 0.3s, height 0.3s';
+      cropRect = { x: aiRect.x, y: aiRect.y, w: aiRect.w, h: aiRect.h };
+      updateCropBox();
+      setTimeout(() => { if (box) box.style.transition = ''; }, 350);
+    }
   };
+}
+
+function imgToDownscaledBase64(img, maxDim) {
+  const scale = Math.min(maxDim / img.naturalWidth, maxDim / img.naturalHeight, 1);
+  const w = Math.max(1, Math.floor(img.naturalWidth * scale));
+  const h = Math.max(1, Math.floor(img.naturalHeight * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+  return canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+}
+
+async function claudeDetectEdges(img) {
+  try {
+    const base64 = imgToDownscaledBase64(img, 1024);
+    const { data: { session } } = await sb.auth.getSession();
+    const headers = { 'Content-Type': 'application/json' };
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+      headers['apikey'] = SUPABASE_KEY;
+    }
+    const res = await fetch(CLAUDE_EDGES_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ imageBase64: base64, mediaType: 'image/jpeg' })
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const b = data.bbox;
+    if (!b || typeof b.x !== 'number' || typeof b.y !== 'number'
+        || typeof b.w !== 'number' || typeof b.h !== 'number') return null;
+    return {
+      x: Math.max(0, Math.min(100, b.x)),
+      y: Math.max(0, Math.min(100, b.y)),
+      w: Math.max(10, Math.min(100 - Math.max(0, b.x), b.w)),
+      h: Math.max(10, Math.min(100 - Math.max(0, b.y), b.h)),
+      confidence: b.confidence || 'medium'
+    };
+  } catch (e) {
+    console.warn('[claude-edges] Fehler:', e);
+    return null;
+  }
 }
 
 function autoDetectCrop(img) {
   try {
     const canvas = document.createElement('canvas');
-    const maxDim = 400;
-    const scale = Math.min(maxDim / img.naturalWidth, maxDim / img.naturalHeight);
-    canvas.width = Math.floor(img.naturalWidth * scale);
-    canvas.height = Math.floor(img.naturalHeight * scale);
+    const maxDim = 600;
+    const scale = Math.min(maxDim / img.naturalWidth, maxDim / img.naturalHeight, 1);
+    const W = canvas.width = Math.floor(img.naturalWidth * scale);
+    const H = canvas.height = Math.floor(img.naturalHeight * scale);
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    const px = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    const W = canvas.width, H = canvas.height;
+    ctx.drawImage(img, 0, 0, W, H);
+    const px = ctx.getImageData(0, 0, W, H).data;
 
-    // Paper detection: paper is BRIGHT + LOW SATURATION
-    // Wood/desk has color saturation (brown tones). Paper is white/gray.
-    const score = new Float32Array(W * H);
+    // Grayscale
+    const gray = new Float32Array(W * H);
     for (let i = 0; i < W * H; i++) {
       const p = i * 4;
-      const r = px[p], g = px[p+1], b = px[p+2];
-      const brightness = (r + g + b) / 3;
-      const maxC = Math.max(r, g, b);
-      const minC = Math.min(r, g, b);
-      const saturation = maxC > 0 ? (maxC - minC) / maxC : 0;
-      // Paper: bright (>120) and low saturation (<0.3)
-      score[i] = brightness > 120 ? (brightness / 255) * (1 - saturation) : 0;
+      gray[i] = 0.299 * px[p] + 0.587 * px[p + 1] + 0.114 * px[p + 2];
     }
 
-    // Sample border pixels to get background score
-    let bgScoreSum = 0, bgCount = 0;
-    const border = 6;
-    for (let y = 0; y < H; y++) {
-      for (let x = 0; x < W; x++) {
-        if (x < border || x >= W-border || y < border || y >= H-border) {
-          bgScoreSum += score[y*W+x];
-          bgCount++;
-        }
+    // 5x5 Gaussian blur to reduce noise
+    const K = [1,4,6,4,1, 4,16,24,16,4, 6,24,36,24,6, 4,16,24,16,4, 1,4,6,4,1];
+    const blur = new Float32Array(W * H);
+    for (let y = 2; y < H - 2; y++)
+      for (let x = 2; x < W - 2; x++) {
+        let s = 0;
+        for (let ky = -2; ky <= 2; ky++)
+          for (let kx = -2; kx <= 2; kx++)
+            s += gray[(y + ky) * W + (x + kx)] * K[(ky + 2) * 5 + (kx + 2)];
+        blur[y * W + x] = s / 256;
       }
-    }
-    const bgScore = bgScoreSum / bgCount;
 
-    // If background is already paper-like, can't distinguish
-    if (bgScore > 0.65) {
-      cropRect = { x: 2, y: 2, w: 96, h: 96 };
-      return;
-    }
-
-    // Threshold between bg and paper
-    const thresh = bgScore + (0.8 - bgScore) * 0.4;
-
-    // Create mask and apply morphological close
-    const mask = new Uint8Array(W * H);
-    for (let i = 0; i < W * H; i++) mask[i] = score[i] > thresh ? 1 : 0;
-
-    // Dilate(2) then erode(1)
-    const temp = new Uint8Array(W * H);
-    for (let y = 2; y < H-2; y++) {
-      for (let x = 2; x < W-2; x++) {
-        let found = 0;
-        for (let dy = -2; dy <= 2 && !found; dy++)
-          for (let dx = -2; dx <= 2 && !found; dx++)
-            if (mask[(y+dy)*W+(x+dx)]) found = 1;
-        temp[y*W+x] = found;
+    // Sobel edge magnitude
+    const edge = new Float32Array(W * H);
+    let maxE = 0;
+    for (let y = 1; y < H - 1; y++)
+      for (let x = 1; x < W - 1; x++) {
+        const gx = -blur[(y-1)*W+(x-1)] - 2*blur[y*W+(x-1)] - blur[(y+1)*W+(x-1)]
+                  + blur[(y-1)*W+(x+1)] + 2*blur[y*W+(x+1)] + blur[(y+1)*W+(x+1)];
+        const gy = -blur[(y-1)*W+(x-1)] - 2*blur[(y-1)*W+x] - blur[(y-1)*W+(x+1)]
+                  + blur[(y+1)*W+(x-1)] + 2*blur[(y+1)*W+x] + blur[(y+1)*W+(x+1)];
+        edge[y * W + x] = Math.sqrt(gx * gx + gy * gy);
+        if (edge[y * W + x] > maxE) maxE = edge[y * W + x];
       }
-    }
-    const final2 = new Uint8Array(W * H);
-    for (let y = 1; y < H-1; y++) {
-      for (let x = 1; x < W-1; x++) {
-        let all = 1;
-        for (let dy = -1; dy <= 1 && all; dy++)
-          for (let dx = -1; dx <= 1 && all; dx++)
-            if (!temp[(y+dy)*W+(x+dx)]) all = 0;
-        final2[y*W+x] = all;
-      }
-    }
 
-    // Count paper pixels per row and column
-    const rowP = new Float32Array(H);
-    const colP = new Float32Array(W);
+    if (maxE === 0) { cropRect = { x: 2, y: 2, w: 96, h: 96 }; return; }
+    for (let i = 0; i < W * H; i++) edge[i] /= maxE;
+
+    // Row/column edge projection sums
+    const rowE = new Float32Array(H);
+    const colE = new Float32Array(W);
     for (let y = 0; y < H; y++)
-      for (let x = 0; x < W; x++)
-        if (final2[y*W+x]) { rowP[y]++; colP[x]++; }
+      for (let x = 0; x < W; x++) {
+        rowE[y] += edge[y * W + x];
+        colE[x] += edge[y * W + x];
+      }
 
-    // Find bounding box
-    const rT = W * 0.12, cT = H * 0.12;
-    let top = 0, bottom = H-1, left = 0, right = W-1;
-    for (let y = 0; y < H; y++) if (rowP[y] > rT) { top = y; break; }
-    for (let y = H-1; y >= 0; y--) if (rowP[y] > rT) { bottom = y; break; }
-    for (let x = 0; x < W; x++) if (colP[x] > cT) { left = x; break; }
-    for (let x = W-1; x >= 0; x--) if (colP[x] > cT) { right = x; break; }
+    // Smooth projections with 5-element moving average
+    function smooth5(arr, n) {
+      const out = new Float32Array(n);
+      for (let i = 2; i < n - 2; i++)
+        out[i] = (arr[i-2] + arr[i-1] + arr[i] + arr[i+1] + arr[i+2]) / 5;
+      return out;
+    }
+    const rS = smooth5(rowE, H);
+    const cS = smooth5(colE, W);
 
-    const pad = Math.floor(Math.min(W, H) * 0.005);
-    top = Math.max(0, top - pad); bottom = Math.min(H-1, bottom + pad);
-    left = Math.max(0, left - pad); right = Math.min(W-1, right + pad);
+    // Normalize by their respective maximums
+    const maxRs = Math.max(...rS) || 1;
+    const maxCs = Math.max(...cS) || 1;
+
+    // Search from each edge inward; threshold = 22% of peak
+    const thresh = 0.22;
+    const skip = Math.max(3, Math.floor(Math.min(W, H) * 0.03));
+    let top = skip, bottom = H - 1 - skip;
+    let left = skip, right = W - 1 - skip;
+
+    for (let y = skip; y < H * 0.55; y++)
+      if (rS[y] / maxRs > thresh) { top = Math.max(0, y - 2); break; }
+    for (let y = H - 1 - skip; y > H * 0.45; y--)
+      if (rS[y] / maxRs > thresh) { bottom = Math.min(H - 1, y + 2); break; }
+    for (let x = skip; x < W * 0.55; x++)
+      if (cS[x] / maxCs > thresh) { left = Math.max(0, x - 2); break; }
+    for (let x = W - 1 - skip; x > W * 0.45; x--)
+      if (cS[x] / maxCs > thresh) { right = Math.min(W - 1, x + 2); break; }
 
     const fW = right - left, fH = bottom - top;
-    if (fW > W * 0.2 && fH > H * 0.2 && (fW < W * 0.95 || fH < H * 0.95)) {
-      cropRect = { x:(left/W)*100, y:(top/H)*100, w:(fW/W)*100, h:(fH/H)*100 };
+    if (fW > W * 0.2 && fH > H * 0.2 && (fW < W * 0.97 || fH < H * 0.97)) {
+      cropRect = { x: (left / W) * 100, y: (top / H) * 100, w: (fW / W) * 100, h: (fH / H) * 100 };
     } else {
       cropRect = { x: 2, y: 2, w: 96, h: 96 };
     }

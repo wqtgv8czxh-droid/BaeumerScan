@@ -1,0 +1,17 @@
+services:
+  app:
+    build: .
+    container_name: baeumerscan-dev
+    ports:
+      - "8080:8080"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - CLAUDE_MODEL=${CLAUDE_MODEL:-claude-sonnet-4-6}
+    env_file:
+      - .env
+    volumes:
+      - ./index.html:/app/public/index.html:ro
+      - ./manifest.json:/app/public/manifest.json:ro
+      - ./sw.js:/app/public/sw.js:ro
+      - ./dev/server.js:/app/server.js:ro
+    restart: unless-stopped
