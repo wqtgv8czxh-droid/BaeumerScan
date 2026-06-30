@@ -1,0 +1,32 @@
+name: Supabase Keepalive
+
+# Hält das Supabase-Projekt (Free Tier) wach.
+# Free-Tier-Projekte pausieren nach 7 Tagen ohne Aktivität.
+# Dieser Workflow schickt alle 2 Tage einen echten DB-Request an Supabase
+# und setzt damit den Pausierungs-Timer zurück.
+# Läuft auf GitHubs Servern — unabhängig davon, ob iPhone/Browser an sind.
+
+on:
+  schedule:
+    # Alle 2 Tage um 06:00 UTC. (Bewusst 2 statt 3 Tage Abstand, weil GitHub
+    # geplante Läufe bei hoher Last manchmal verzögert/auslässt — so bleibt
+    # genug Puffer zum 7-Tage-Limit.)
+    - cron: "0 6 */2 * *"
+  # Erlaubt manuelles Auslösen im GitHub-UI (Tab "Actions" -> "Run workflow") zum Testen.
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        env:
+          # anon-Key (öffentlich, RLS-geschützt) — identisch zu dem in index.html.
+          # NICHT der service_role-Key.
+          ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmYm1hd3J0aG96aHRnZ3hsa25iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjk4MzAsImV4cCI6MjA5MTkwNTgzMH0.z8s_MHNhYveCXBlZCma7esJJszRR9Ep2Co0Lr8q6oFU"
+        run: |
+          curl --fail --silent --show-error \
+            "https://jfbmawrthozhtggxlknb.supabase.co/rest/v1/documents?select=id&limit=1" \
+            -H "apikey: ${ANON_KEY}" \
+            -H "Authorization: Bearer ${ANON_KEY}"
+          echo "Keepalive-Ping erfolgreich."
