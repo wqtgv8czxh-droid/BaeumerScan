@@ -8,10 +8,11 @@ name: Supabase Keepalive
 
 on:
   schedule:
-    # Alle 2 Tage um 06:00 UTC. (Bewusst 2 statt 3 Tage Abstand, weil GitHub
-    # geplante Läufe bei hoher Last manchmal verzögert/auslässt — so bleibt
-    # genug Puffer zum 7-Tage-Limit.)
-    - cron: "0 6 */2 * *"
+    # Täglich um 06:00 UTC. Supabase bewertet für die 7-Tage-Pause-Regel die
+    # MENGE der DB-Anfragen ("ein paar pro Tag reichen"). Alle 2 Tage war zu
+    # wenig — deshalb jetzt täglich. GitHub lässt geplante Läufe bei hoher Last
+    # manchmal aus; tägliche Ausführung gibt genug Puffer zum 7-Tage-Limit.
+    - cron: "0 6 * * *"
   # Erlaubt manuelles Auslösen im GitHub-UI (Tab "Actions" -> "Run workflow") zum Testen.
   workflow_dispatch: {}
 
