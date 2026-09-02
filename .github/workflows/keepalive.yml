@@ -2,9 +2,16 @@ name: Supabase Keepalive
 
 # Hält das Supabase-Projekt (Free Tier) wach.
 # Free-Tier-Projekte pausieren nach 7 Tagen ohne Aktivität.
-# Dieser Workflow schickt alle 2 Tage einen echten DB-Request an Supabase
+# Dieser Workflow schickt täglich einen echten DB-Request an Supabase
 # und setzt damit den Pausierungs-Timer zurück.
 # Läuft auf GitHubs Servern — unabhängig davon, ob iPhone/Browser an sind.
+#
+# ZWEITES Problem, das hier mitgelöst wird: GitHub schaltet geplante Workflows
+# nach 60 Tagen OHNE Repo-Aktivität automatisch ab. Keepalive-Läufe selbst
+# zählen dabei NICHT als Aktivität — nur Commits/Pushes. Ohne Gegenmaßnahme
+# stirbt dieser Workflow also nach 60 ruhigen Tagen, und 7 Tage später
+# pausiert Supabase. Deshalb schreibt der Job "repo-activity" unten bei Bedarf
+# einen Zeitstempel-Commit und setzt die 60-Tage-Uhr zurück.
 
 on:
   schedule:
@@ -31,3 +38,36 @@ jobs:
             -H "apikey: ${ANON_KEY}" \
             -H "Authorization: Bearer ${ANON_KEY}"
           echo "Keepalive-Ping erfolgreich."
+
+  # Verhindert, dass GitHub diesen Workflow nach 60 Tagen Repo-Stille abschaltet.
+  # Läuft täglich mit, tut aber fast immer nichts: Nur wenn der letzte Commit
+  # älter als 45 Tage ist, wird ein Zeitstempel-Commit gepusht (= Repo-Aktivität).
+  # Ergebnis: Der Commit-Abstand bleibt garantiert unter 46 Tagen (< 60), und
+  # solange du selbst am Repo arbeitest, entstehen gar keine Bot-Commits.
+  repo-activity:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Zeitstempel-Commit, falls Repo zu lange still war
+        run: |
+          set -euo pipefail
+
+          MAX_AGE_DAYS=45
+          AGE_DAYS=$(( ( $(date +%s) - $(git log -1 --format=%ct) ) / 86400 ))
+          echo "Letzter Commit ist ${AGE_DAYS} Tage alt (Schwelle: ${MAX_AGE_DAYS}, GitHub-Limit: 60)."
+
+          if [ "${AGE_DAYS}" -lt "${MAX_AGE_DAYS}" ]; then
+            echo "Repo ist frisch genug — kein Commit nötig."
+            exit 0
+          fi
+
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/keepalive-timestamp.txt
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/keepalive-timestamp.txt
+          git commit -m "Keepalive: Repo-Aktivität (GitHub 60-Tage-Regel)"
+          git push
+          echo "Zeitstempel gepusht — 60-Tage-Uhr zurückgesetzt."
