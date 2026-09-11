@@ -1,73 +1,85 @@
 name: Supabase Keepalive
 
 # Hält das Supabase-Projekt (Free Tier) wach.
-# Free-Tier-Projekte pausieren nach 7 Tagen ohne Aktivität.
-# Dieser Workflow schickt täglich einen echten DB-Request an Supabase
-# und setzt damit den Pausierungs-Timer zurück.
-# Läuft auf GitHubs Servern — unabhängig davon, ob iPhone/Browser an sind.
 #
-# ZWEITES Problem, das hier mitgelöst wird: GitHub schaltet geplante Workflows
-# nach 60 Tagen OHNE Repo-Aktivität automatisch ab. Keepalive-Läufe selbst
-# zählen dabei NICHT als Aktivität — nur Commits/Pushes. Ohne Gegenmaßnahme
-# stirbt dieser Workflow also nach 60 ruhigen Tagen, und 7 Tage später
-# pausiert Supabase. Deshalb schreibt der Job "repo-activity" unten bei Bedarf
-# einen Zeitstempel-Commit und setzt die 60-Tage-Uhr zurück.
+# WICHTIG — die Lektion vom 11.09.2026:
+# Supabase pausiert Free-Projekte nicht bei NULL Aktivität, sondern bei
+# "not sufficient activity". Es zählt also die MENGE der Anfragen, nicht
+# ihr blosses Vorhandensein. Ein einzelner Ping pro Tag reichte NICHT —
+# das Projekt wurde trotz taeglich gruenem Workflow zum Pausieren vorgemerkt.
+#
+# Referenzwerte aus den Supabase-Logs (Stand 11.09.2026):
+#   risksizer   ~2.472 Requests/24h  -> nie eine Warnung
+#   BaumerScan      44 Requests/24h  -> Warnmail
+#
+# Daher jetzt: stuendlich 20 Requests = ~480/Tag. Das liegt mit Abstand
+# ueber der Schwelle und trotzdem bei nur rund einem Fuenftel dessen,
+# was risksizer beanstandungsfrei erzeugt.
 
 on:
   schedule:
-    # Täglich um 06:00 UTC. Supabase bewertet für die 7-Tage-Pause-Regel die
-    # MENGE der DB-Anfragen ("ein paar pro Tag reichen"). Alle 2 Tage war zu
-    # wenig — deshalb jetzt täglich. GitHub lässt geplante Läufe bei hoher Last
-    # manchmal aus; tägliche Ausführung gibt genug Puffer zum 7-Tage-Limit.
-    - cron: "0 6 * * *"
-  # Erlaubt manuelles Auslösen im GitHub-UI (Tab "Actions" -> "Run workflow") zum Testen.
+    - cron: "0 * * * *"
+  # Erlaubt manuelles Ausloesen im GitHub-UI (Tab "Actions" -> "Run workflow").
   workflow_dispatch: {}
+
+# Verhindert, dass sich Laeufe ueberlappen, falls GitHub einen Lauf verzoegert.
+concurrency:
+  group: supabase-keepalive
+  cancel-in-progress: false
 
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Supabase REST API
+      - name: Supabase mit echtem Traffic wachhalten
         env:
-          # anon-Key (öffentlich, RLS-geschützt) — identisch zu dem in index.html.
+          SUPABASE_URL: "https://jfbmawrthozhtggxlknb.supabase.co"
+          # anon-Key (oeffentlich, RLS-geschuetzt) — identisch zu dem in index.html.
           # NICHT der service_role-Key.
           ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmYm1hd3J0aG96aHRnZ3hsa25iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjk4MzAsImV4cCI6MjA5MTkwNTgzMH0.z8s_MHNhYveCXBlZCma7esJJszRR9Ep2Co0Lr8q6oFU"
         run: |
-          curl --fail --silent --show-error \
-            "https://jfbmawrthozhtggxlknb.supabase.co/rest/v1/documents?select=id&limit=1" \
-            -H "apikey: ${ANON_KEY}" \
-            -H "Authorization: Bearer ${ANON_KEY}"
-          echo "Keepalive-Ping erfolgreich."
+          set -uo pipefail
 
-  # Verhindert, dass GitHub diesen Workflow nach 60 Tagen Repo-Stille abschaltet.
-  # Läuft täglich mit, tut aber fast immer nichts: Nur wenn der letzte Commit
-  # älter als 45 Tage ist, wird ein Zeitstempel-Commit gepusht (= Repo-Aktivität).
-  # Ergebnis: Der Commit-Abstand bleibt garantiert unter 46 Tagen (< 60), und
-  # solange du selbst am Repo arbeitest, entstehen gar keine Bot-Commits.
-  repo-activity:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
+          # Nur Endpunkte, die nachweislich HTTP 200 liefern.
+          # ("/rest/v1/" als Wurzel antwortet mit 401 und ist daher raus.)
+          ENDPOINTS=(
+            "rest/v1/documents?select=id&limit=1"
+            "rest/v1/workspaces?select=id&limit=1"
+            "rest/v1/workspace_members?select=id&limit=1"
+          )
 
-      - name: Zeitstempel-Commit, falls Repo zu lange still war
-        run: |
-          set -euo pipefail
+          REQUESTS=20
+          OK=0
+          FAIL=0
 
-          MAX_AGE_DAYS=45
-          AGE_DAYS=$(( ( $(date +%s) - $(git log -1 --format=%ct) ) / 86400 ))
-          echo "Letzter Commit ist ${AGE_DAYS} Tage alt (Schwelle: ${MAX_AGE_DAYS}, GitHub-Limit: 60)."
+          for i in $(seq 1 "${REQUESTS}"); do
+            EP="${ENDPOINTS[$(( (i - 1) % ${#ENDPOINTS[@]} ))]}"
+            CODE=$(curl -s -m 20 -o /dev/null -w "%{http_code}" \
+              "${SUPABASE_URL}/${EP}" \
+              -H "apikey: ${ANON_KEY}" \
+              -H "Authorization: Bearer ${ANON_KEY}" || echo "000")
 
-          if [ "${AGE_DAYS}" -lt "${MAX_AGE_DAYS}" ]; then
-            echo "Repo ist frisch genug — kein Commit nötig."
-            exit 0
+            if [ "${CODE}" = "200" ]; then
+              OK=$(( OK + 1 ))
+            else
+              FAIL=$(( FAIL + 1 ))
+              echo "  Fehlschlag: ${EP} -> HTTP ${CODE}"
+            fi
+
+            # Kleine Pause: verteilt die Last und sieht nach echtem Nutzerverkehr aus.
+            sleep 5
+          done
+
+          echo "Keepalive: ${OK}/${REQUESTS} Requests erfolgreich, ${FAIL} fehlgeschlagen."
+
+          # Harte Fehler nur, wenn gar nichts durchkommt — dann ist der Keepalive
+          # wirkungslos und das muss sichtbar sein (roter Lauf + GitHub-Mail).
+          if [ "${OK}" -eq 0 ]; then
+            echo "::error::Kein einziger Request erfolgreich — Keepalive wirkungslos!"
+            exit 1
           fi
 
-          date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/keepalive-timestamp.txt
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/keepalive-timestamp.txt
-          git commit -m "Keepalive: Repo-Aktivität (GitHub 60-Tage-Regel)"
-          git push
-          echo "Zeitstempel gepusht — 60-Tage-Uhr zurückgesetzt."
+          # Teilausfaelle als Warnung sichtbar machen, aber nicht rot faerben.
+          if [ "${FAIL}" -gt 0 ]; then
+            echo "::warning::${FAIL} von ${REQUESTS} Requests fehlgeschlagen."
+          fi

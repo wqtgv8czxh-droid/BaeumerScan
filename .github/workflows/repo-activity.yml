@@ -1,0 +1,48 @@
+name: Repo-Aktivitaet
+
+# Verhindert, dass GitHub die geplanten Workflows dieses Repos nach 60 Tagen
+# Stille automatisch abschaltet. Keepalive-Laeufe selbst zaehlen dabei NICHT
+# als Aktivitaet — nur Commits/Pushes.
+#
+# Frueher war dieser Job Teil von keepalive.yml. Seit keepalive.yml stuendlich
+# laeuft, hat er eine eigene (taegliche) Datei bekommen: die Pruefung einmal
+# am Tag genuegt voellig, 24-mal waere reine Verschwendung.
+#
+# Er tut fast immer nichts: Nur wenn der letzte Commit aelter als 45 Tage ist,
+# wird ein Zeitstempel-Commit gepusht. Damit bleibt der Commit-Abstand
+# garantiert unter 46 Tagen (< 60), und solange du selbst am Repo arbeitest,
+# entstehen gar keine Bot-Commits.
+
+on:
+  schedule:
+    - cron: "20 6 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  repo-activity:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Zeitstempel-Commit, falls Repo zu lange still war
+        run: |
+          set -euo pipefail
+
+          MAX_AGE_DAYS=45
+          AGE_DAYS=$(( ( $(date +%s) - $(git log -1 --format=%ct) ) / 86400 ))
+          echo "Letzter Commit ist ${AGE_DAYS} Tage alt (Schwelle: ${MAX_AGE_DAYS}, GitHub-Limit: 60)."
+
+          if [ "${AGE_DAYS}" -lt "${MAX_AGE_DAYS}" ]; then
+            echo "Repo ist frisch genug — kein Commit noetig."
+            exit 0
+          fi
+
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/keepalive-timestamp.txt
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/keepalive-timestamp.txt
+          git commit -m "Keepalive: Repo-Aktivitaet (GitHub 60-Tage-Regel)"
+          git push
+          echo "Zeitstempel gepusht — 60-Tage-Uhr zurueckgesetzt."
