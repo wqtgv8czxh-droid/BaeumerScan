@@ -21,6 +21,7 @@
     --blue: #6B7FD7;
     --green: #5A8A5E;
     --yellow: #F2CC8F;
+    --red: #E05F5F;
     --radius: 14px;
     --safe-bottom: env(safe-area-inset-bottom, 0px);
     --safe-top: env(safe-area-inset-top, 0px);
@@ -1253,6 +1254,176 @@
   /* Crop-Sheet immer über anderen Sheets (re-crop aus Detail- oder Scan-Sheet) */
   #crop-sheet { z-index: 250; }
 
+  /* ===== FAHRZEUGE ===== */
+  .tab-btn { position: relative; }
+  .tab-badge {
+    position: absolute;
+    top: 0;
+    left: calc(50% + 6px);
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: var(--red);
+    color: white;
+    font-size: 9px;
+    line-height: 16px;
+    text-align: center;
+  }
+
+  .vehicle-list { padding: 12px 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+  .vcard {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(45,37,32,0.06);
+    transition: transform 0.1s;
+    flex-shrink: 0;
+  }
+  .vcard:active { transform: scale(0.98); }
+  .v-stripe { width: 5px; flex-shrink: 0; background: var(--border); }
+  .v-stripe.overdue { background: var(--red); }
+  .v-stripe.soon { background: var(--yellow); }
+  .v-stripe.ok { background: var(--green); }
+  .vcard-body { flex: 1; min-width: 0; padding: 13px 14px; display: flex; flex-direction: column; gap: 6px; }
+  .vcard-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .vcard-name { font-family: 'Fraunces', serif; font-size: 21px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vcard-km { font-size: 11px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .vcard-details { font-size: 11px; color: var(--muted); }
+  .vcard-line { font-size: 12px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .vehicle-add-card {
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    background: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: pointer;
+    width: 100%;
+  }
+
+  .v-pill { font-size: 10px; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+  .v-pill.overdue { background: rgba(224,95,95,0.12); color: var(--red); }
+  .v-pill.soon { background: rgba(242,204,143,0.35); color: #A8740F; }
+  .v-pill.ok { background: rgba(90,138,94,0.12); color: var(--green); }
+  .v-pill.unknown { background: var(--border); color: #8F8173; }
+
+  #view-vehicle .navbar { position: sticky; top: 0; }
+  .vehicle-head {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 4px 20px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .vehicle-head-name { font-family: 'Fraunces', serif; font-weight: 300; font-style: italic; font-size: 28px; letter-spacing: -0.5px; }
+  .vehicle-km-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 12px;
+  }
+  .vehicle-km-row b { font-size: 16px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .vehicle-km-row small { display: block; font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .v-mini-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 9px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .v-section { padding: 16px 16px 0; display: flex; flex-direction: column; gap: 8px; }
+  .v-section-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .v-section-head span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .v-link { background: none; border: none; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent); cursor: pointer; padding: 2px 0; }
+  .v-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .v-empty { padding: 14px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+  .v-due { padding: 11px 13px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; cursor: pointer; }
+  .v-due:last-child { border-bottom: none; }
+  .v-due-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .v-due-name { font-size: 13px; font-weight: 500; }
+  .v-due-sub { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; line-height: 1.5; }
+  .v-bar { height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; }
+  .v-bar i { display: block; height: 100%; border-radius: 2px; background: var(--muted); }
+  .v-bar i.overdue { background: var(--red); }
+  .v-bar i.soon { background: #E5B55E; }
+  .v-bar i.ok { background: var(--green); }
+
+  .v-timeline { padding: 12px 13px 0; }
+  .v-tl-item { display: grid; grid-template-columns: 14px 1fr; gap: 10px; padding-bottom: 14px; position: relative; cursor: pointer; }
+  .v-tl-item::before { content: ''; position: absolute; left: 6px; top: 12px; bottom: -2px; width: 1.5px; background: var(--border); }
+  .v-tl-item:last-child::before { display: none; }
+  .v-tl-dot { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--accent); background: var(--surface); margin-top: 2px; position: relative; }
+  .v-tl-date { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .v-tl-title { font-size: 13px; font-weight: 500; margin: 2px 0 3px; }
+  .v-tl-meta { font-size: 11px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 8px; font-variant-numeric: tabular-nums; }
+  .v-tl-notes { font-size: 11px; color: var(--muted); margin-top: 3px; font-style: italic; }
+  .v-beleg { background: none; border: none; padding: 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--blue); cursor: pointer; }
+
+  .v-doc { display: flex; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .v-doc:last-child { border-bottom: none; }
+  .v-doc-body { flex: 1; min-width: 0; padding: 10px 12px; }
+  .v-doc-top { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+  .v-doc-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .v-doc-meta { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .v-costs {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 13px;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    font-variant-numeric: tabular-nums;
+  }
+  .v-costs b { color: var(--text); font-weight: 500; }
+  .v-actions { padding: 16px 16px 24px; }
+
+  .form-hint { font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .form-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .form-two .form-group { min-width: 0; }
+  .v-preview {
+    background: rgba(90,138,94,0.08);
+    border: 1px solid rgba(90,138,94,0.25);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--green);
+  }
+  .v-delete-btn {
+    background: none;
+    border: 1.5px solid var(--red);
+    color: var(--red);
+    border-radius: 12px;
+    padding: 13px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    width: 100%;
+  }
+  .v-rem-list { padding: 12px 20px 0; display: flex; flex-direction: column; gap: 8px; }
+  .v-rem-item { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; display: flex; overflow: hidden; }
+  .v-rem-body { flex: 1; min-width: 0; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+  .v-rem-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; }
+  .v-rem-sub { font-size: 11px; color: var(--muted); }
+
   /* ===== LIGHTBOX EDIT BUTTON ===== */
   .lightbox-edit-btn {
     position: fixed;
@@ -1377,6 +1548,26 @@
     </div>
   </div>
 
+  <!-- VEHICLES VIEW -->
+  <div class="view" id="view-vehicles">
+    <div class="navbar">
+      <h1>Fahrzeuge</h1>
+      <button class="navbar-action" onclick="openVehicleForm(null)">+ Neu</button>
+    </div>
+    <div class="vehicle-list" id="vehicle-list">
+      <div class="loading-dots"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+
+  <!-- VEHICLE DETAIL VIEW -->
+  <div class="view" id="view-vehicle">
+    <div class="navbar">
+      <button class="navbar-action" style="padding-left:0" onclick="closeVehicle()">‹ Fahrzeuge</button>
+      <button class="navbar-action" onclick="openVehicleForm(currentVehicleId)">Bearbeiten</button>
+    </div>
+    <div id="vehicle-detail"></div>
+  </div>
+
   <!-- SETTINGS VIEW -->
   <div class="view" id="view-settings">
     <div class="navbar"><h1>Einstellungen</h1></div>
@@ -1464,14 +1655,21 @@
       </svg>
       <span>Archiv</span>
     </button>
+    <button class="tab-btn" id="tab-vehicles" onclick="switchTab('vehicles')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M3 16v-3.5l2.2-5A2 2 0 0 1 7 6.3h10a2 2 0 0 1 1.8 1.2l2.2 5V16a1 1 0 0 1-1 1h-1"/>
+        <path d="M5 17H4a1 1 0 0 1-1-1"/><path d="M3 12.5h18"/>
+        <circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/><path d="M9.5 17h5"/>
+      </svg>
+      <span>Fahrzeuge</span>
+      <span class="tab-badge" id="vehicle-badge" style="display:none"></span>
+    </button>
     <button class="tab-btn" id="tab-settings" onclick="switchTab('settings')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
         <circle cx="12" cy="12" r="3"/>
         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
       </svg>
       <span>Einstell.</span>
-    </button>
-  </nav>
     </button>
   </nav>
 </div>
@@ -1610,6 +1808,28 @@
   </div>
 </div>
 
+<!-- VEHICLE FORM SHEET (Fahrzeug, km-Stand, Wartung, Intervall) -->
+<div class="sheet" id="vehicle-form-sheet">
+  <div class="sheet-backdrop" onclick="closeSheet('vehicle-form-sheet')"></div>
+  <div class="sheet-content">
+    <div class="sheet-handle"></div>
+    <div id="vehicle-form-inner"></div>
+  </div>
+</div>
+
+<!-- VEHICLE REMINDER SHEET -->
+<div class="sheet" id="reminder-sheet">
+  <div class="sheet-backdrop" onclick="closeSheet('reminder-sheet')"></div>
+  <div class="sheet-content">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">Wartung fällig</div>
+      <button class="sheet-close" onclick="closeSheet('reminder-sheet')">✕</button>
+    </div>
+    <div id="reminder-inner"></div>
+  </div>
+</div>
+
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
@@ -1650,15 +1870,15 @@ let currentOcrText = '';
 let currentAiData = null;
 let currentOcrController = null;
 let authMode = 'login';
-let inviteWorkspaceId = null;
+let inviteToken = null;
 
 // ===== INIT =====
 async function init() {
   // Check for invite link
   const params = new URLSearchParams(window.location.search);
-  const inviteWs = params.get('invite');
-  if (inviteWs) {
-    inviteWorkspaceId = inviteWs;
+  const invite = params.get('invite');
+  if (invite) {
+    inviteToken = invite;
     switchAuthTab('register');
     document.getElementById('auth-invite-hint').textContent = '✓ Einladungslink erkannt — registriere dich um beizutreten';
   }
@@ -1775,7 +1995,7 @@ async function handleAuth() {
       const { data, error } = await sb.auth.signUp({ email, password, options: { data: { display_name: name } } });
       if (error) throw error;
       currentUser = data.user;
-      await setupNewUser(name, inviteWorkspaceId);
+      await setupNewUser(name, inviteToken);
     }
   } catch(e) {
     showAuthError(e.message || 'Fehler beim Anmelden');
@@ -1790,39 +2010,28 @@ function showAuthError(msg) {
   el.classList.add('visible');
 }
 
-async function setupNewUser(name, wsId) {
+async function setupNewUser(name, token) {
   // Wait for Supabase to fully register the user in auth.users
   await new Promise(r => setTimeout(r, 1500));
 
-  // Retry up to 5 times with delay
-  async function tryInsert(fn) {
+  // Retry up to 5 times with delay. Workspace-Beitritt/-Anlage läuft über
+  // Datenbank-Funktionen (RPC), weil die Tabellen direkt nicht mehr beschreibbar sind.
+  async function tryRpc(fn, args) {
     for (let i = 0; i < 5; i++) {
-      const result = await fn();
-      if (!result.error) return result;
-      if (i < 4) await new Promise(r => setTimeout(r, 1000));
-      else throw result.error;
+      const result = await sb.rpc(fn, args);
+      if (!result.error) return result.data;
+      // Ungültiger Einladungslink: Wiederholen bringt nichts
+      if ((result.error.message || '').includes('Einladungslink') || i === 4) throw result.error;
+      await new Promise(r => setTimeout(r, 1000));
     }
   }
 
-  if (wsId) {
-    await tryInsert(() => sb.from('workspace_members').insert({
-      workspace_id: wsId,
-      user_id: currentUser.id,
-      display_name: name
-    }));
-    currentWorkspaceId = wsId;
-    currentUserName = name;
+  if (token) {
+    currentWorkspaceId = await tryRpc('accept_workspace_invite', { p_token: token, p_display_name: name });
   } else {
-    const { data: ws, error: wsErr } = await sb.from('workspaces').insert({ name: 'Bäumer Familie' }).select().single();
-    if (wsErr) throw wsErr;
-    await tryInsert(() => sb.from('workspace_members').insert({
-      workspace_id: ws.id,
-      user_id: currentUser.id,
-      display_name: name
-    }));
-    currentWorkspaceId = ws.id;
-    currentUserName = name;
+    currentWorkspaceId = await tryRpc('create_own_workspace', { p_display_name: name });
   }
+  currentUserName = name;
   showApp();
 }
 
@@ -1831,7 +2040,7 @@ async function loadUserWorkspace() {
   if (!members || members.length === 0) {
     // User exists but no workspace yet — create one automatically
     const name = currentUser.user_metadata?.display_name || currentUser.email.split('@')[0];
-    await setupNewUser(name, null);
+    await setupNewUser(name, inviteToken);
     return;
   }
   currentWorkspaceId = members[0].workspace_id;
@@ -1840,6 +2049,8 @@ async function loadUserWorkspace() {
 }
 
 async function showApp() {
+  // Über "Teilen" geöffnet: keine Fahrzeug-Erinnerung über dem Scan-Fenster
+  const openedViaShare = new URLSearchParams(window.location.search).has('share-target');
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
   document.getElementById('user-greeting').textContent = currentUserName;
@@ -1855,6 +2066,10 @@ async function showApp() {
   renderFilterBar();
   // Remove invite param from URL
   if (window.location.search) history.replaceState({}, '', window.location.pathname);
+
+  await loadVehicles();
+  renderTagChips();
+  if (!openedViaShare) maybeShowVehicleReminders();
 }
 
 async function handleLogout() {
@@ -1876,6 +2091,7 @@ async function loadDocuments() {
   renderDocuments();
   renderFilterBar();
   document.getElementById('doc-count').textContent = documents.length + ' Dok.';
+  refreshVehicleViews();
 }
 
 function subscribeRealtime() {
@@ -2101,7 +2317,7 @@ function editSelectType(type) {
 
 function renderEditTagChips() {
   const wrap = document.getElementById('edit-tags-wrap');
-  const allTags = [...new Set([...getActiveTagList(), ...documents.flatMap(d=>d.tags||[]), ...editSelectedTags])];
+  const allTags = [...new Set([...vehicles.map(v => v.name), ...getActiveTagList(), ...documents.flatMap(d=>d.tags||[]), ...editSelectedTags])];
   wrap.innerHTML = allTags.map(t => `
     <button class="tag-chip ${editSelectedTags.includes(t)?'selected':''}" onclick="toggleEditTag('${esc(t)}')">${esc(t)}</button>
   `).join('');
@@ -2713,7 +2929,7 @@ function renderTagChips() {
   const wrap = document.getElementById('tags-wrap');
   const activeTags = getActiveTagList();
   const docTags = documents.flatMap(d=>d.tags||[]);
-  const allTags = [...new Set([...activeTags, ...docTags, ...selectedTags])];
+  const allTags = [...new Set([...vehicles.map(v => v.name), ...activeTags, ...docTags, ...selectedTags])];
   wrap.innerHTML = allTags.map(t => `
     <button class="tag-chip ${selectedTags.includes(t)?'selected':''}" onclick="toggleTag('${esc(t)}')">${esc(t)}</button>
   `).join('');
@@ -2807,10 +3023,17 @@ async function saveDocument() {
 
 // ===== SETTINGS =====
 async function generateInviteLink() {
-  const url = `${window.location.origin}${window.location.pathname}?invite=${currentWorkspaceId}`;
+  // Einmal-Code statt Workspace-ID: 7 Tage gültig, nur einmal einlösbar
+  const { data: token, error } = await sb.rpc('create_workspace_invite', { p_workspace_id: currentWorkspaceId });
+  if (error || !token) {
+    console.error('Einladung Fehler:', error);
+    showToast('Link konnte nicht erstellt werden');
+    return;
+  }
+  const url = `${window.location.origin}${window.location.pathname}?invite=${encodeURIComponent(token)}`;
   document.getElementById('invite-link-text').textContent = url;
   document.getElementById('invite-link-wrap').style.display = 'block';
-  showToast('Link bereit — kopieren und per iMessage senden!');
+  showToast('Link bereit · 7 Tage gültig, 1× nutzbar');
 }
 
 function copyInviteLink() {
@@ -2826,6 +3049,7 @@ function switchTab(tab) {
   document.getElementById('view-' + tab).classList.add('active');
   document.getElementById('tab-' + tab).classList.add('active');
   if (tab === 'archive') { loadDocuments(); renderFilterBar(); }
+  if (tab === 'vehicles') { currentVehicleId = null; loadVehicles(); }
   if (tab === 'settings') { renderDocTypeManager(); renderTagManager(); }
 }
 
@@ -3243,6 +3467,841 @@ function addManagedTag() {
   input.value = '';
   renderTagManager();
   showToast('Tag hinzugefügt ✓');
+}
+
+// ===== FAHRZEUGE =====
+// Ein Fahrzeug gehört zum Workspace. Dokumente gehören zu einem Fahrzeug, wenn sie
+// dessen Namen als Tag tragen (Groß/Klein egal). Wartungen + Intervalle werden manuell gepflegt.
+const VEHICLE_WORK_SUGGESTIONS = ['Ölwechsel','Ölfilter','Luftfilter','Inspektion','Keilriemen','Zahnriemen','Bremsen','Bremsflüssigkeit','Reifen','HU/TÜV'];
+const REMIND_DAYS = 30;   // Erinnerung: so viele Tage vor Fälligkeit
+const REMIND_KM = 1000;   // Erinnerung: so viele km vor Fälligkeit
+const DUE_RANK = { overdue: 0, soon: 1, ok: 2, unknown: 3 };
+
+let vehicles = [];
+let vehicleServices = [];   // alle Wartungen, neueste zuerst
+let vehicleIntervals = [];
+let currentVehicleId = null;
+let vehicleShowAllServices = false;
+let vehicleShowAllDocs = false;
+
+async function loadVehicles() {
+  if (!currentWorkspaceId) return;
+  const { data, error } = await sb.from('vehicles')
+    .select('*')
+    .eq('workspace_id', currentWorkspaceId)
+    .order('name');
+  if (error) { console.error('loadVehicles error:', error); return; }
+  vehicles = data || [];
+
+  const ids = vehicles.map(v => v.id);
+  if (ids.length) {
+    const [services, intervals] = await Promise.all([
+      sb.from('vehicle_services').select('*').in('vehicle_id', ids)
+        .order('service_date', { ascending: false }).order('created_at', { ascending: false }),
+      sb.from('vehicle_intervals').select('*').in('vehicle_id', ids).order('created_at')
+    ]);
+    if (services.error) console.error('vehicle_services error:', services.error);
+    if (intervals.error) console.error('vehicle_intervals error:', intervals.error);
+    vehicleServices = services.data || [];
+    vehicleIntervals = intervals.data || [];
+  } else {
+    vehicleServices = [];
+    vehicleIntervals = [];
+  }
+  refreshVehicleViews();
+}
+
+function refreshVehicleViews() {
+  renderVehicleList();
+  updateVehicleBadge();
+  if (currentVehicleId && document.getElementById('view-vehicle').classList.contains('active')) {
+    renderVehicleDetail();
+  }
+}
+
+// ----- Hilfsfunktionen Datum / Zahlen -----
+function normName(s) { return String(s || '').trim().toLowerCase(); }
+function parseISODate(s) { const [y, m, d] = s.slice(0, 10).split('-').map(Number); return new Date(y, m - 1, d); }
+function todayDate() { const t = new Date(); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); }
+function toISODate(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+function addMonths(date, n) {
+  const d = new Date(date.getFullYear(), date.getMonth() + n, 1);
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(date.getDate(), lastDay));
+  return d;
+}
+function daysBetween(a, b) { return Math.round((b - a) / 86400000); }
+function fmtDate(d) { return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
+function fmtKm(n) { return Number(n).toLocaleString('de-DE') + ' km'; }
+function fmtEuro(n) { return Number(n).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }); }
+function spanText(days) {
+  if (days < 45) return days === 1 ? '1 Tag' : `${days} Tagen`;
+  if (days < 730) { const m = Math.round(days / 30.4); return m === 1 ? '1 Monat' : `${m} Monaten`; }
+  const y = Math.round(days / 365); return y === 1 ? '1 Jahr' : `${y} Jahren`;
+}
+function dayLabel(days) { return days === 0 ? 'heute' : days < 0 ? `seit ${spanText(-days)}` : `in ${spanText(days)}`; }
+function kmLabel(km) { return km === 0 ? 'jetzt' : km < 0 ? `seit ${fmtKm(-km)}` : `in ${fmtKm(km)}`; }
+function uniqueNames(list) {
+  const seen = new Set();
+  return list.filter(x => { const k = normName(x); if (!k || seen.has(k)) return false; seen.add(k); return true; });
+}
+
+// ----- Daten pro Fahrzeug -----
+function vehicleDocuments(v) {
+  const n = normName(v.name);
+  return documents
+    .filter(d => (d.tags || []).some(t => normName(t) === n))
+    .sort((a, b) => (b.document_date || b.created_at).localeCompare(a.document_date || a.created_at));
+}
+
+// Höchster bekannter km-Stand (manuell eingetragen oder aus Wartungen)
+function vehicleKnownKm(v) {
+  let best = v.current_km != null ? { km: v.current_km, date: v.current_km_date } : null;
+  vehicleServices.forEach(s => {
+    if (s.vehicle_id === v.id && s.km != null && (!best || s.km > best.km)) best = { km: s.km, date: s.service_date };
+  });
+  return best;
+}
+
+function intervalText(interval) {
+  const parts = [];
+  if (interval.interval_months) parts.push(`${interval.interval_months} Mon.`);
+  if (interval.interval_km) parts.push(fmtKm(interval.interval_km));
+  return 'alle ' + parts.join(' / ');
+}
+
+// Fälligkeit eines Intervalls berechnen
+function computeDue(v, interval) {
+  const type = normName(interval.service_type);
+  const last = vehicleServices.find(s => s.vehicle_id === v.id && (s.work_items || []).some(w => normName(w) === type));
+  if (!last) {
+    return { interval, status: 'unknown', progress: 0, label: 'noch kein Eintrag',
+      sub: `Noch keine Wartung „${interval.service_type}“ eingetragen · ${intervalText(interval)}` };
+  }
+
+  const today = todayDate();
+  const lastDate = parseISODate(last.service_date);
+  const known = vehicleKnownKm(v);
+  let dueDate = null, daysLeft = null, dueKm = null, kmLeft = null, progress = 0;
+
+  if (interval.interval_months) {
+    dueDate = addMonths(lastDate, interval.interval_months);
+    daysLeft = daysBetween(today, dueDate);
+    const total = daysBetween(lastDate, dueDate);
+    progress = Math.max(progress, total > 0 ? daysBetween(lastDate, today) / total : 1);
+  }
+  if (interval.interval_km && last.km != null) {
+    dueKm = last.km + interval.interval_km;
+    kmLeft = dueKm - known.km;
+    progress = Math.max(progress, (known.km - last.km) / interval.interval_km);
+  }
+
+  if (daysLeft == null && kmLeft == null) {
+    // Nur km-Intervall, aber beim letzten Eintrag fehlt der km-Stand
+    return { interval, status: 'unknown', progress: 0, label: 'km fehlt',
+      sub: `Letzte Wartung ${fmtDate(lastDate)} ohne km-Stand · ${intervalText(interval)}` };
+  }
+
+  const timeOver = daysLeft != null && daysLeft < 0;
+  const kmOver = kmLeft != null && kmLeft <= 0;
+  const timeSoon = daysLeft != null && daysLeft <= REMIND_DAYS;
+  const kmSoon = kmLeft != null && kmLeft <= REMIND_KM;
+  const status = (timeOver || kmOver) ? 'overdue' : (timeSoon || kmSoon) ? 'soon' : 'ok';
+
+  let useKm;
+  if (status === 'overdue') useKm = !timeOver;
+  else if (status === 'soon') useKm = !timeSoon;
+  else useKm = daysLeft == null;
+  const label = useKm ? kmLabel(kmLeft) : dayLabel(daysLeft);
+
+  const dueParts = [];
+  if (dueDate) dueParts.push(fmtDate(dueDate));
+  if (dueKm != null) dueParts.push((dueDate ? '' : 'bei ') + fmtKm(dueKm));
+  let sub = `fällig ${dueParts.join(' oder ')} · ${intervalText(interval)}`;
+  if (interval.interval_km && last.km == null) sub += ' · km beim letzten Eintrag fehlt';
+
+  return { interval, status, progress, label, sub };
+}
+
+function vehicleDues(v) {
+  return vehicleIntervals
+    .filter(i => i.vehicle_id === v.id)
+    .map(i => computeDue(v, i))
+    .sort((a, b) => (DUE_RANK[a.status] - DUE_RANK[b.status]) || (b.progress - a.progress));
+}
+
+function vehicleStatus(dues) {
+  if (!dues.length) return '';
+  return dues[0].status === 'unknown' ? '' : dues[0].status;
+}
+
+function duePillText(d) { return d.status === 'overdue' ? `${d.label} überfällig` : d.label; }
+
+// ----- Liste -----
+function renderVehicleList() {
+  const list = document.getElementById('vehicle-list');
+  if (!list) return;
+  if (!vehicles.length) {
+    list.innerHTML = `<div class="empty-state">
+        <p>Noch keine Fahrzeuge<br>Dokumente mit dem Fahrzeugnamen als Tag erscheinen automatisch beim Fahrzeug.</p>
+      </div>
+      <button class="vehicle-add-card" onclick="openVehicleForm(null)">+ Fahrzeug anlegen</button>`;
+    return;
+  }
+
+  list.innerHTML = vehicles.map(v => {
+    const dues = vehicleDues(v);
+    const status = vehicleStatus(dues);
+    const known = vehicleKnownKm(v);
+    const urgent = dues.filter(d => d.status === 'overdue' || d.status === 'soon');
+    let lines;
+    if (urgent.length) {
+      lines = urgent.slice(0, 2).map(d => d.status === 'overdue'
+        ? `<div class="vcard-line"><span class="v-pill overdue">überfällig</span> ${esc(d.interval.service_type)} ${esc(d.label)}</div>`
+        : `<div class="vcard-line"><span class="v-pill soon">${esc(d.label)}</span> ${esc(d.interval.service_type)}</div>`
+      ).join('');
+    } else if (dues.some(d => d.status === 'ok')) {
+      const next = dues.find(d => d.status === 'ok');
+      lines = `<div class="vcard-line"><span class="v-pill ok">alles ok</span> Nächste: ${esc(next.interval.service_type)} ${esc(next.label)}</div>`;
+    } else if (dues.length) {
+      lines = `<div class="vcard-line"><span class="v-pill unknown">noch keine Wartung eingetragen</span></div>`;
+    } else {
+      const docCount = vehicleDocuments(v).length;
+      lines = `<div class="vcard-line"><span class="v-pill unknown">keine Intervalle</span> ${docCount} ${docCount === 1 ? 'Dokument' : 'Dokumente'}</div>`;
+    }
+    return `<div class="vcard" onclick="openVehicle('${v.id}')">
+      <div class="v-stripe ${status}"></div>
+      <div class="vcard-body">
+        <div class="vcard-top">
+          <span class="vcard-name">${esc(v.name)}</span>
+          <span class="vcard-km">${known ? fmtKm(known.km) : '—'}</span>
+        </div>
+        ${v.details ? `<div class="vcard-details">${esc(v.details)}</div>` : ''}
+        ${lines}
+      </div>
+    </div>`;
+  }).join('') + `<button class="vehicle-add-card" onclick="openVehicleForm(null)">+ Fahrzeug anlegen</button>`;
+}
+
+function collectVehicleReminders() {
+  const items = [];
+  vehicles.forEach(v => vehicleDues(v).forEach(d => {
+    if (d.status === 'overdue' || d.status === 'soon') items.push({ vehicle: v, due: d });
+  }));
+  return items.sort((a, b) => DUE_RANK[a.due.status] - DUE_RANK[b.due.status]);
+}
+
+function updateVehicleBadge() {
+  const badge = document.getElementById('vehicle-badge');
+  if (!badge) return;
+  const count = collectVehicleReminders().length;
+  badge.textContent = count;
+  badge.style.display = count ? 'block' : 'none';
+}
+
+// ----- Detail -----
+function openVehicle(id) {
+  currentVehicleId = id;
+  vehicleShowAllServices = false;
+  vehicleShowAllDocs = false;
+  renderVehicleDetail();
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const view = document.getElementById('view-vehicle');
+  view.classList.add('active');
+  view.scrollTop = 0;
+  document.getElementById('tab-vehicles').classList.add('active');
+}
+
+function closeVehicle() {
+  switchTab('vehicles');
+}
+
+function toggleVehicleServices() { vehicleShowAllServices = !vehicleShowAllServices; renderVehicleDetail(); }
+function toggleVehicleDocs() { vehicleShowAllDocs = !vehicleShowAllDocs; renderVehicleDetail(); }
+
+function renderVehicleDetail() {
+  const el = document.getElementById('vehicle-detail');
+  const v = vehicles.find(x => x.id === currentVehicleId);
+  if (!v) { el.innerHTML = ''; return; }
+
+  const known = vehicleKnownKm(v);
+  const dues = vehicleDues(v);
+  const services = vehicleServices.filter(s => s.vehicle_id === v.id);
+  const docs = vehicleDocuments(v);
+
+  const duesHtml = dues.length
+    ? dues.map(d => `<div class="v-due" onclick="openIntervalForm('${d.interval.id}')">
+        <div class="v-due-top">
+          <span class="v-due-name">${esc(d.interval.service_type)}</span>
+          <span class="v-pill ${d.status}">${esc(duePillText(d))}</span>
+        </div>
+        ${d.status !== 'unknown' ? `<div class="v-bar"><i class="${d.status}" style="width:${Math.max(3, Math.min(1, d.progress) * 100).toFixed(0)}%"></i></div>` : ''}
+        <div class="v-due-sub">${esc(d.sub)}</div>
+      </div>`).join('')
+    : `<div class="v-empty">Noch keine Intervalle. Trag die Werte aus deinem Serviceheft ein, dann siehst du hier, wann die nächste Wartung fällig ist.</div>`;
+
+  const shownServices = vehicleShowAllServices ? services : services.slice(0, 3);
+  const servicesHtml = services.length
+    ? `<div class="v-timeline">${shownServices.map(s => {
+        const doc = s.document_id ? documents.find(d => d.id === s.document_id) : null;
+        const meta = [];
+        if (s.km != null) meta.push(`<span>${fmtKm(s.km)}</span>`);
+        if (s.cost != null) meta.push(`<span>${fmtEuro(s.cost)}</span>`);
+        if (s.workshop) meta.push(`<span>${esc(s.workshop)}</span>`);
+        if (doc) meta.push(`<button class="v-beleg" onclick="event.stopPropagation();showDetail('${doc.id}')">📎 Beleg</button>`);
+        return `<div class="v-tl-item" onclick="openServiceForm('${s.id}')">
+          <span class="v-tl-dot"></span>
+          <div>
+            <div class="v-tl-date">${fmtDate(parseISODate(s.service_date))}</div>
+            <div class="v-tl-title">${esc((s.work_items || []).join(', '))}</div>
+            ${meta.length ? `<div class="v-tl-meta">${meta.join('')}</div>` : ''}
+            ${s.notes ? `<div class="v-tl-notes">${esc(s.notes)}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('')}</div>`
+    : `<div class="v-empty">Noch keine Wartungen eingetragen.</div>`;
+
+  const shownDocs = vehicleShowAllDocs ? docs : docs.slice(0, 3);
+  const docsHtml = docs.length
+    ? shownDocs.map(d => {
+        const date = fmtDate(parseISODate(d.document_date || d.created_at));
+        const amount = d.amount ? `<span class="doc-amount">${parseFloat(d.amount).toLocaleString('de-DE', { style: 'currency', currency: d.currency || 'EUR' })}</span>` : '';
+        return `<div class="v-doc" onclick="showDetail('${d.id}')">
+          <div class="doc-stripe stripe-${esc(d.type || 'Allgemein')}"></div>
+          <div class="v-doc-body">
+            <div class="v-doc-top"><span class="v-doc-title">${esc(d.title)}</span>${amount}</div>
+            <div class="v-doc-meta">${date} · ${esc(d.type || 'Allgemein')}</div>
+          </div>
+        </div>`;
+      }).join('')
+    : `<div class="v-empty">Noch keine Dokumente mit dem Tag „${esc(v.name)}“. Beim Scannen einfach diesen Tag auswählen.</div>`;
+
+  // Ausgaben pro Jahr: Dokument-Beträge + Kosten von Wartungen ohne (getaggten) Beleg
+  const totals = {};
+  docs.forEach(d => {
+    if (d.amount && (d.currency || 'EUR') === 'EUR') {
+      const y = (d.document_date || d.created_at).slice(0, 4);
+      totals[y] = (totals[y] || 0) + Number(d.amount);
+    }
+  });
+  services.forEach(s => {
+    if (s.cost != null && !(s.document_id && docs.some(d => d.id === s.document_id))) {
+      const y = s.service_date.slice(0, 4);
+      totals[y] = (totals[y] || 0) + Number(s.cost);
+    }
+  });
+  const thisYear = todayDate().getFullYear();
+  const costsHtml = Object.keys(totals).length
+    ? `<div class="v-costs"><span>Ausgaben ${thisYear} <b>${fmtEuro(totals[thisYear] || 0)}</b></span><span>${thisYear - 1} <b>${fmtEuro(totals[thisYear - 1] || 0)}</b></span></div>`
+    : '';
+
+  el.innerHTML = `
+    <div class="vehicle-head">
+      <div>
+        <div class="vehicle-head-name">${esc(v.name)}</div>
+        ${v.details ? `<div class="vcard-details" style="font-size:12px">${esc(v.details)}</div>` : ''}
+      </div>
+      <div class="vehicle-km-row">
+        <div>${known
+          ? `<b>${fmtKm(known.km)}</b><small>Stand vom ${fmtDate(parseISODate(known.date))}</small>`
+          : `<b>— km</b><small>Noch kein km-Stand eingetragen</small>`}</div>
+        <button class="v-mini-btn" onclick="openKmForm()">km aktualisieren</button>
+      </div>
+    </div>
+
+    <div class="v-section">
+      <div class="v-section-head"><span>Nächste Wartungen</span><button class="v-link" onclick="openIntervalForm(null)">+ Intervall</button></div>
+      <div class="v-box">${duesHtml}</div>
+    </div>
+
+    <div class="v-section">
+      <div class="v-section-head"><span>Letzte Wartungen</span>${services.length > 3
+        ? `<button class="v-link" onclick="toggleVehicleServices()">${vehicleShowAllServices ? 'Weniger' : `Alle ${services.length}`}</button>` : ''}</div>
+      <div class="v-box">${servicesHtml}</div>
+    </div>
+
+    <div class="v-section">
+      <div class="v-section-head"><span>Rechnungen &amp; Dokumente</span>${docs.length > 3
+        ? `<button class="v-link" onclick="toggleVehicleDocs()">${vehicleShowAllDocs ? 'Weniger' : `Alle ${docs.length}`}</button>` : ''}</div>
+      <div class="v-box">${docsHtml}${costsHtml}</div>
+    </div>
+
+    <div class="v-actions">
+      <button class="save-btn" onclick="openServiceForm(null)">+ Wartung eintragen</button>
+    </div>`;
+}
+
+// ----- Formulare -----
+let vfEditingId = null;          // Fahrzeug / Wartung / Intervall, je nach offenem Formular
+let sfWorkOptions = [];
+let sfSelectedWork = [];
+let ifTypeOptions = [];
+let ifSelectedType = '';
+
+function vehicleFormHeader(title) {
+  return `<div class="sheet-header">
+    <div class="sheet-title">${esc(title)}</div>
+    <button class="sheet-close" onclick="closeSheet('vehicle-form-sheet')">✕</button>
+  </div>`;
+}
+
+function inputInt(id) {
+  const raw = document.getElementById(id).value.trim();
+  if (raw === '') return null;
+  const n = parseInt(raw, 10);
+  return Number.isFinite(n) && n >= 0 ? n : NaN;
+}
+function inputMoney(id) {
+  const raw = document.getElementById(id).value.trim().replace(',', '.');
+  if (raw === '') return null;
+  const n = parseFloat(raw);
+  return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : NaN;
+}
+
+async function withSaveButton(btnId, fn) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = true;
+  btn.textContent = 'Wird gespeichert...';
+  try {
+    await fn();
+  } catch (e) {
+    console.error(e);
+    showToast('Fehler: ' + (e.message || ''));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Speichern';
+  }
+}
+
+// Fahrzeug anlegen / bearbeiten
+function openVehicleForm(id) {
+  const v = id ? vehicles.find(x => x.id === id) : null;
+  vfEditingId = v ? v.id : null;
+  document.getElementById('vehicle-form-inner').innerHTML = `
+    ${vehicleFormHeader(v ? 'Fahrzeug bearbeiten' : 'Neues Fahrzeug')}
+    <div class="form-body" style="padding-top:14px">
+      <div class="form-group">
+        <label class="form-label" for="vf-name">Name</label>
+        <input class="form-input" id="vf-name" type="text" placeholder="z.B. Bulli" value="${esc(v?.name)}">
+        <div class="form-hint">Der Name ist gleichzeitig der Tag: Dokumente mit diesem Tag erscheinen beim Fahrzeug.${v ? ' Beim Umbenennen werden die Tags der Dokumente mit angepasst.' : ''}</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="vf-details">Details (optional)</label>
+        <input class="form-input" id="vf-details" type="text" placeholder="z.B. VW T5 · OL-AB 123" value="${esc(v?.details)}">
+      </div>
+      ${v ? '' : `<div class="form-group">
+        <label class="form-label" for="vf-km">Aktueller km-Stand (optional)</label>
+        <input class="form-input" id="vf-km" type="number" inputmode="numeric" min="0" step="1" placeholder="z.B. 186900">
+      </div>`}
+      <button class="save-btn" id="vf-save" onclick="saveVehicle()">Speichern</button>
+      ${v ? `<button class="v-delete-btn" onclick="deleteVehicle()">Fahrzeug löschen</button>` : ''}
+    </div>`;
+  openSheet('vehicle-form-sheet');
+}
+
+async function saveVehicle() {
+  const name = document.getElementById('vf-name').value.trim();
+  const details = document.getElementById('vf-details').value.trim() || null;
+  if (!name) { showToast('Bitte einen Namen eingeben'); return; }
+  if (/['"\\]/.test(name)) { showToast('Name bitte ohne Anführungszeichen'); return; }
+  const duplicate = vehicles.find(x => normName(x.name) === normName(name) && x.id !== vfEditingId);
+  if (duplicate) { showToast('Es gibt schon ein Fahrzeug mit diesem Namen'); return; }
+
+  await withSaveButton('vf-save', async () => {
+    if (vfEditingId) {
+      const v = vehicles.find(x => x.id === vfEditingId);
+      const { error } = await sb.from('vehicles').update({ name, details }).eq('id', v.id);
+      if (error) throw error;
+      if (v.name !== name) {
+        // Tag in allen Dokumenten des Fahrzeugs mit umbenennen
+        for (const d of vehicleDocuments(v)) {
+          const tags = (d.tags || []).map(t => normName(t) === normName(v.name) ? name : t);
+          const { error: tagErr } = await sb.from('documents').update({ tags }).eq('id', d.id);
+          if (tagErr) console.error('Tag-Umbenennung fehlgeschlagen:', tagErr);
+        }
+        await loadDocuments();
+      }
+      closeSheet('vehicle-form-sheet');
+      await loadVehicles();
+      showToast('Fahrzeug gespeichert ✓');
+    } else {
+      const km = inputInt('vf-km');
+      if (Number.isNaN(km)) { showToast('Bitte gültigen km-Stand eingeben'); return; }
+      const { data, error } = await sb.from('vehicles').insert({
+        workspace_id: currentWorkspaceId,
+        name,
+        details,
+        current_km: km,
+        current_km_date: km != null ? toISODate(todayDate()) : null
+      }).select().single();
+      if (error) throw error;
+      closeSheet('vehicle-form-sheet');
+      await loadVehicles();
+      openVehicle(data.id);
+      showToast('Fahrzeug angelegt ✓');
+    }
+    renderTagChips();
+  });
+}
+
+async function deleteVehicle() {
+  const v = vehicles.find(x => x.id === vfEditingId);
+  if (!v) return;
+  if (!confirm(`„${v.name}“ löschen?\n\nWartungen und Intervalle werden gelöscht. Die Dokumente bleiben im Archiv.`)) return;
+  const { error } = await sb.from('vehicles').delete().eq('id', v.id);
+  if (error) { showToast('Fehler beim Löschen'); return; }
+  closeSheet('vehicle-form-sheet');
+  switchTab('vehicles');
+  showToast('Fahrzeug gelöscht');
+}
+
+// km-Stand aktualisieren
+function openKmForm() {
+  const v = vehicles.find(x => x.id === currentVehicleId);
+  if (!v) return;
+  const known = vehicleKnownKm(v);
+  document.getElementById('vehicle-form-inner').innerHTML = `
+    ${vehicleFormHeader('km-Stand · ' + v.name)}
+    <div class="form-body" style="padding-top:14px">
+      <div class="form-two">
+        <div class="form-group">
+          <label class="form-label" for="kf-km">km-Stand</label>
+          <input class="form-input" id="kf-km" type="number" inputmode="numeric" min="0" step="1" placeholder="${known ? known.km : 'z.B. 186900'}">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="kf-date">Datum</label>
+          <input class="form-input" id="kf-date" type="date" value="${toISODate(todayDate())}">
+        </div>
+      </div>
+      ${known ? `<div class="form-hint">Bisher: ${fmtKm(known.km)} am ${fmtDate(parseISODate(known.date))}</div>` : ''}
+      <button class="save-btn" id="kf-save" onclick="saveKm()">Speichern</button>
+    </div>`;
+  openSheet('vehicle-form-sheet');
+  setTimeout(() => document.getElementById('kf-km')?.focus(), 300);
+}
+
+async function saveKm() {
+  const v = vehicles.find(x => x.id === currentVehicleId);
+  const km = inputInt('kf-km');
+  const date = document.getElementById('kf-date').value;
+  if (km == null || Number.isNaN(km)) { showToast('Bitte gültigen km-Stand eingeben'); return; }
+  if (!date) { showToast('Bitte Datum eingeben'); return; }
+  const known = vehicleKnownKm(v);
+  if (known && km < known.km) { showToast(`Kleiner als bisheriger Stand (${fmtKm(known.km)})`); return; }
+  await withSaveButton('kf-save', async () => {
+    const { error } = await sb.from('vehicles').update({ current_km: km, current_km_date: date }).eq('id', v.id);
+    if (error) throw error;
+    closeSheet('vehicle-form-sheet');
+    await loadVehicles();
+    showToast('km-Stand gespeichert ✓');
+  });
+}
+
+// Wartung eintragen / bearbeiten
+function openServiceForm(id) {
+  const v = vehicles.find(x => x.id === currentVehicleId);
+  if (!v) return;
+  const s = id ? vehicleServices.find(x => x.id === id) : null;
+  vfEditingId = s ? s.id : null;
+  sfSelectedWork = s ? [...(s.work_items || [])] : [];
+
+  const docs = vehicleDocuments(v);
+  const linked = s?.document_id ? documents.find(d => d.id === s.document_id) : null;
+  if (linked && !docs.includes(linked)) docs.unshift(linked);
+  const docOptions = docs.map(d => {
+    const date = d.document_date ? ' · ' + fmtDate(parseISODate(d.document_date)) : '';
+    return `<option value="${d.id}" ${s?.document_id === d.id ? 'selected' : ''}>${esc(d.title)}${date}</option>`;
+  }).join('');
+  const workshops = uniqueNames(vehicleServices.map(x => x.workshop).filter(Boolean));
+
+  document.getElementById('vehicle-form-inner').innerHTML = `
+    ${vehicleFormHeader('Wartung · ' + v.name)}
+    <div class="form-body" style="padding-top:14px">
+      <div class="form-group">
+        <label class="form-label" for="sf-doc">Beleg (optional)</label>
+        <select class="form-input" id="sf-doc" onchange="serviceDocChanged()">
+          <option value="">Kein Beleg</option>
+          ${docOptions}
+        </select>
+        ${docs.length ? '' : `<div class="form-hint">Hier erscheinen Dokumente mit dem Tag „${esc(v.name)}“.</div>`}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Was wurde gemacht?</label>
+        <div class="tags-wrap" id="sf-work"></div>
+        <div class="tag-input-row">
+          <input class="form-input" id="sf-work-input" type="text" placeholder="Eigene Arbeit..." onkeydown="if(event.key==='Enter'){addServiceWork();event.preventDefault()}">
+          <button class="tag-add-btn" onclick="addServiceWork()">+</button>
+        </div>
+      </div>
+      <div class="form-two">
+        <div class="form-group">
+          <label class="form-label" for="sf-date">Datum</label>
+          <input class="form-input" id="sf-date" type="date" value="${s?.service_date || toISODate(todayDate())}">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="sf-km">km-Stand</label>
+          <input class="form-input" id="sf-km" type="number" inputmode="numeric" min="0" step="1" value="${s?.km ?? ''}">
+        </div>
+      </div>
+      <div class="form-two">
+        <div class="form-group">
+          <label class="form-label" for="sf-cost">Kosten €</label>
+          <input class="form-input" id="sf-cost" type="number" inputmode="decimal" min="0" step="0.01" value="${s?.cost ?? ''}">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="sf-workshop">Werkstatt</label>
+          <input class="form-input" id="sf-workshop" type="text" list="sf-workshop-list" value="${esc(s?.workshop)}">
+          <datalist id="sf-workshop-list">${workshops.map(w => `<option value="${esc(w)}">`).join('')}</datalist>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="sf-notes">Notiz (optional)</label>
+        <input class="form-input" id="sf-notes" type="text" placeholder="z.B. 5W-30, 6,5 l" value="${esc(s?.notes)}">
+      </div>
+      <button class="save-btn" id="sf-save" onclick="saveService()">Speichern</button>
+      ${s ? `<button class="v-delete-btn" onclick="deleteService()">Eintrag löschen</button>` : ''}
+    </div>`;
+  renderServiceWorkChips();
+  openSheet('vehicle-form-sheet');
+}
+
+function renderServiceWorkChips() {
+  const v = vehicles.find(x => x.id === currentVehicleId);
+  sfWorkOptions = uniqueNames([
+    ...VEHICLE_WORK_SUGGESTIONS,
+    ...vehicleIntervals.filter(i => i.vehicle_id === v.id).map(i => i.service_type),
+    ...vehicleServices.filter(s => s.vehicle_id === v.id).flatMap(s => s.work_items || []),
+    ...sfSelectedWork
+  ]);
+  document.getElementById('sf-work').innerHTML = sfWorkOptions.map((w, i) => {
+    const selected = sfSelectedWork.some(x => normName(x) === normName(w));
+    return `<button class="tag-chip ${selected ? 'selected' : ''}" onclick="toggleServiceWork(${i})">${esc(w)}</button>`;
+  }).join('');
+}
+
+function toggleServiceWork(index) {
+  const w = sfWorkOptions[index];
+  if (sfSelectedWork.some(x => normName(x) === normName(w))) {
+    sfSelectedWork = sfSelectedWork.filter(x => normName(x) !== normName(w));
+  } else {
+    sfSelectedWork.push(w);
+  }
+  renderServiceWorkChips();
+}
+
+function addServiceWork() {
+  const input = document.getElementById('sf-work-input');
+  const val = input.value.trim();
+  if (!val) return;
+  if (!sfSelectedWork.some(x => normName(x) === normName(val))) sfSelectedWork.push(val);
+  input.value = '';
+  renderServiceWorkChips();
+}
+
+// Beleg gewählt: Datum und Betrag daraus übernehmen
+function serviceDocChanged() {
+  const doc = documents.find(d => d.id === document.getElementById('sf-doc').value);
+  if (!doc) return;
+  if (doc.document_date) document.getElementById('sf-date').value = doc.document_date;
+  if (doc.amount) document.getElementById('sf-cost').value = Number(doc.amount).toFixed(2);
+}
+
+async function saveService() {
+  const v = vehicles.find(x => x.id === currentVehicleId);
+  const pendingWork = document.getElementById('sf-work-input').value.trim();
+  if (pendingWork) addServiceWork();
+  if (!sfSelectedWork.length) { showToast('Bitte mindestens eine Arbeit auswählen'); return; }
+  const date = document.getElementById('sf-date').value;
+  if (!date) { showToast('Bitte Datum eingeben'); return; }
+  const km = inputInt('sf-km');
+  if (Number.isNaN(km)) { showToast('Bitte gültigen km-Stand eingeben'); return; }
+  const cost = inputMoney('sf-cost');
+  if (Number.isNaN(cost)) { showToast('Bitte gültige Kosten eingeben'); return; }
+
+  const entry = {
+    work_items: sfSelectedWork,
+    service_date: date,
+    km,
+    cost,
+    workshop: document.getElementById('sf-workshop').value.trim() || null,
+    notes: document.getElementById('sf-notes').value.trim() || null,
+    document_id: document.getElementById('sf-doc').value || null
+  };
+
+  await withSaveButton('sf-save', async () => {
+    const { error } = vfEditingId
+      ? await sb.from('vehicle_services').update(entry).eq('id', vfEditingId)
+      : await sb.from('vehicle_services').insert({ ...entry, vehicle_id: v.id, added_by_name: currentUserName });
+    if (error) throw error;
+    closeSheet('vehicle-form-sheet');
+    await loadVehicles();
+    showToast('Wartung gespeichert ✓');
+  });
+}
+
+async function deleteService() {
+  if (!confirm('Diesen Wartungseintrag löschen?')) return;
+  const { error } = await sb.from('vehicle_services').delete().eq('id', vfEditingId);
+  if (error) { showToast('Fehler beim Löschen'); return; }
+  closeSheet('vehicle-form-sheet');
+  await loadVehicles();
+  showToast('Eintrag gelöscht');
+}
+
+// Intervall festlegen / bearbeiten
+function openIntervalForm(id) {
+  const v = vehicles.find(x => x.id === currentVehicleId);
+  if (!v) return;
+  const interval = id ? vehicleIntervals.find(x => x.id === id) : null;
+  vfEditingId = interval ? interval.id : null;
+  ifSelectedType = interval ? interval.service_type : '';
+
+  document.getElementById('vehicle-form-inner').innerHTML = `
+    ${vehicleFormHeader('Intervall · ' + v.name)}
+    <div class="form-body" style="padding-top:14px">
+      <div class="form-group">
+        <label class="form-label">Wartungsart</label>
+        <div class="tags-wrap" id="if-types"></div>
+        <div class="tag-input-row">
+          <input class="form-input" id="if-type-input" type="text" placeholder="Eigene Art..." onkeydown="if(event.key==='Enter'){addIntervalType();event.preventDefault()}">
+          <button class="tag-add-btn" onclick="addIntervalType()">+</button>
+        </div>
+      </div>
+      <div class="form-two">
+        <div class="form-group">
+          <label class="form-label" for="if-months">Alle … Monate</label>
+          <input class="form-input" id="if-months" type="number" inputmode="numeric" min="1" step="1" value="${interval?.interval_months ?? ''}" oninput="renderIntervalPreview()">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="if-km">Alle … km</label>
+          <input class="form-input" id="if-km" type="number" inputmode="numeric" min="1" step="1" value="${interval?.interval_km ?? ''}" oninput="renderIntervalPreview()">
+        </div>
+      </div>
+      <div class="form-hint">Werte aus dem Serviceheft. Es zählt, was zuerst eintritt.</div>
+      <div id="if-preview"></div>
+      <button class="save-btn" id="if-save" onclick="saveInterval()">Speichern</button>
+      ${interval ? `<button class="v-delete-btn" onclick="deleteInterval()">Intervall löschen</button>` : ''}
+    </div>`;
+  renderIntervalTypeChips();
+  openSheet('vehicle-form-sheet');
+}
+
+function renderIntervalTypeChips() {
+  const v = vehicles.find(x => x.id === currentVehicleId);
+  const taken = vehicleIntervals
+    .filter(i => i.vehicle_id === v.id && i.id !== vfEditingId)
+    .map(i => normName(i.service_type));
+  ifTypeOptions = uniqueNames([
+    ...VEHICLE_WORK_SUGGESTIONS,
+    ...vehicleServices.filter(s => s.vehicle_id === v.id).flatMap(s => s.work_items || []),
+    ifSelectedType
+  ]).filter(t => !taken.includes(normName(t)));
+  document.getElementById('if-types').innerHTML = ifTypeOptions.map((t, i) =>
+    `<button class="tag-chip ${normName(t) === normName(ifSelectedType) ? 'selected' : ''}" onclick="selectIntervalType(${i})">${esc(t)}</button>`
+  ).join('');
+  renderIntervalPreview();
+}
+
+function selectIntervalType(index) {
+  ifSelectedType = ifTypeOptions[index];
+  renderIntervalTypeChips();
+}
+
+function addIntervalType() {
+  const input = document.getElementById('if-type-input');
+  const val = input.value.trim();
+  if (!val) return;
+  ifSelectedType = val;
+  input.value = '';
+  renderIntervalTypeChips();
+}
+
+function renderIntervalPreview() {
+  const box = document.getElementById('if-preview');
+  const v = vehicles.find(x => x.id === currentVehicleId);
+  const months = inputInt('if-months');
+  const km = inputInt('if-km');
+  if (!ifSelectedType || (!months && !km) || Number.isNaN(months) || Number.isNaN(km)) { box.innerHTML = ''; return; }
+  const due = computeDue(v, { service_type: ifSelectedType, interval_months: months || null, interval_km: km || null });
+  const last = vehicleServices.find(s => s.vehicle_id === v.id && (s.work_items || []).some(w => normName(w) === normName(ifSelectedType)));
+  if (!last) {
+    box.innerHTML = `<div class="form-hint">Noch keine Wartung „${esc(ifSelectedType)}“ eingetragen. Die Fälligkeit wird berechnet, sobald du eine einträgst.</div>`;
+    return;
+  }
+  if (due.status === 'unknown') {
+    box.innerHTML = `<div class="form-hint">${esc(due.sub)}</div>`;
+    return;
+  }
+  box.innerHTML = `<div class="v-preview">Letzte Wartung: ${fmtDate(parseISODate(last.service_date))}${last.km != null ? ' bei ' + fmtKm(last.km) : ''}<br>→ ${esc(due.sub.split(' · ')[0])} (${esc(duePillText(due))})</div>`;
+}
+
+async function saveInterval() {
+  const v = vehicles.find(x => x.id === currentVehicleId);
+  const pendingType = document.getElementById('if-type-input').value.trim();
+  if (pendingType) addIntervalType();
+  if (!ifSelectedType) { showToast('Bitte eine Wartungsart wählen'); return; }
+  const months = inputInt('if-months');
+  const km = inputInt('if-km');
+  if (Number.isNaN(months) || Number.isNaN(km) || months === 0 || km === 0) { showToast('Bitte gültige Werte eingeben'); return; }
+  if (months == null && km == null) { showToast('Bitte Monate oder km eingeben'); return; }
+  const taken = vehicleIntervals.some(i => i.vehicle_id === v.id && i.id !== vfEditingId && normName(i.service_type) === normName(ifSelectedType));
+  if (taken) { showToast('Für diese Art gibt es schon ein Intervall'); return; }
+
+  const entry = { service_type: ifSelectedType, interval_months: months, interval_km: km };
+  await withSaveButton('if-save', async () => {
+    const { error } = vfEditingId
+      ? await sb.from('vehicle_intervals').update(entry).eq('id', vfEditingId)
+      : await sb.from('vehicle_intervals').insert({ ...entry, vehicle_id: v.id });
+    if (error) throw error;
+    closeSheet('vehicle-form-sheet');
+    await loadVehicles();
+    showToast('Intervall gespeichert ✓');
+  });
+}
+
+async function deleteInterval() {
+  if (!confirm('Dieses Intervall löschen? Die Wartungseinträge bleiben erhalten.')) return;
+  const { error } = await sb.from('vehicle_intervals').delete().eq('id', vfEditingId);
+  if (error) { showToast('Fehler beim Löschen'); return; }
+  closeSheet('vehicle-form-sheet');
+  await loadVehicles();
+  showToast('Intervall gelöscht');
+}
+
+// ----- Erinnerung beim Öffnen der App (einmal pro App-Start) -----
+function maybeShowVehicleReminders() {
+  try {
+    if (sessionStorage.getItem('vehicleRemindersShown') === '1') return;
+  } catch (e) { /* sessionStorage nicht verfügbar: trotzdem anzeigen */ }
+  const items = collectVehicleReminders();
+  if (!items.length) return;
+  try { sessionStorage.setItem('vehicleRemindersShown', '1'); } catch (e) {}
+
+  const vehicleIds = [...new Set(items.map(x => x.vehicle.id))];
+  const target = vehicleIds.length === 1 ? items[0].vehicle : null;
+  document.getElementById('reminder-inner').innerHTML = `
+    <div style="padding:4px 20px 0;font-size:12px;color:var(--muted)">${items.length === 1 ? '1 Punkt braucht' : items.length + ' Punkte brauchen'} Aufmerksamkeit</div>
+    <div class="v-rem-list">
+      ${items.map(({ vehicle, due }) => `<div class="v-rem-item">
+        <div class="v-stripe ${due.status}"></div>
+        <div class="v-rem-body">
+          <div class="v-rem-top"><span>${esc(vehicle.name)} · ${esc(due.interval.service_type)}</span><span class="v-pill ${due.status}">${esc(duePillText(due))}</span></div>
+          <div class="v-rem-sub">${esc(due.sub.split(' · ')[0])}</div>
+        </div>
+      </div>`).join('')}
+    </div>
+    <div class="crop-actions">
+      <button class="crop-btn secondary" onclick="closeSheet('reminder-sheet')">Später</button>
+      <button class="crop-btn primary" onclick="openReminderTarget(${target ? `'${target.id}'` : 'null'})">${target ? 'Zum ' + esc(target.name) : 'Zu den Fahrzeugen'}</button>
+    </div>`;
+  openSheet('reminder-sheet');
+}
+
+function openReminderTarget(vehicleId) {
+  closeSheet('reminder-sheet');
+  switchTab('vehicles');
+  if (vehicleId) openVehicle(vehicleId);
 }
 
 // ===== START =====
